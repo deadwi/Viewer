@@ -4,6 +4,7 @@ package net.deadwi.viewer;
  * Created by jihun.jo on 2015-10-28.
  */
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -16,11 +17,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class CustomAdapter extends BaseAdapter {
-    private ArrayList<String>   m_List;
+public class CustomAdapter extends BaseAdapter
+{
+    private ArrayList<String> m_List;
+    private FileManager fileManager;
 
-    public CustomAdapter()
+    public CustomAdapter(FileManager _fileManager)
     {
+        fileManager = _fileManager;
         m_List = new ArrayList<String>();
     }
 
@@ -63,8 +67,7 @@ public class CustomAdapter extends BaseAdapter {
             Button btn = (Button) convertView.findViewById(R.id.btn_test);
             btn.setOnClickListener(new OnClickListener() {
                 @Override
-                public void onClick(View v)
-                {
+                public void onClick(View v) {
                     // 터치 시 해당 아이템 이름 출력
                     Toast.makeText(context, m_List.get(pos), Toast.LENGTH_SHORT).show();
                 }
@@ -75,18 +78,21 @@ public class CustomAdapter extends BaseAdapter {
                 @Override
                 public void onClick(View v)
                 {
-                    // 터치 시 해당 아이템 이름 출력
-                    Toast.makeText(context, "리스트 클릭 : "+m_List.get(pos), Toast.LENGTH_SHORT).show();
+                    String path = fileManager.getCurrentDir()+"/"+m_List.get(pos);
+                    if(fileManager.isDirectory(path))
+                    {
+                    }
+                    else
+                        Toast.makeText(context, "리스트 클릭 : "+m_List.get(pos), Toast.LENGTH_SHORT).show();
                 }
             });
 
             // 리스트 아이템을 길게 터치 했을 떄 이벤트 발생
             convertView.setOnLongClickListener(new OnLongClickListener() {
                 @Override
-                public boolean onLongClick(View v)
-                {
+                public boolean onLongClick(View v) {
                     // 터치 시 해당 아이템 이름 출력
-                    Toast.makeText(context, "리스트 롱 클릭 : "+m_List.get(pos), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "리스트 롱 클릭 : " + m_List.get(pos), Toast.LENGTH_SHORT).show();
                     return true;
                 }
             });
@@ -95,15 +101,26 @@ public class CustomAdapter extends BaseAdapter {
         return convertView;
     }
 
-    // 외부에서 아이템 추가 요청 시 사용
     public void add(String _msg)
     {
         m_List.add(_msg);
     }
 
-    // 외부에서 아이템 삭제 요청 시 사용
     public void remove(int _position)
     {
         m_List.remove(_position);
+    }
+
+    public void updateFileList()
+    {
+        m_List.clear();
+
+        String current = fileManager.getCurrentDir();
+        ArrayList<String> list = fileManager.getNextDir(current, false);
+        for(Iterator<String> iter = list.iterator();iter.hasNext();)
+        {
+            String string = iter.next();
+            add(string);
+        }
     }
 }
