@@ -2,6 +2,7 @@ package net.deadwi.viewer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Stack;
 import java.io.File;
@@ -25,120 +26,75 @@ public class FileManager
     public static final int SORT_SIZE = 	3;
     private static final int BUFFER = 1024*4;
 
-    private boolean mShowHiddenFiles = false;
-    private int mSortType = SORT_ALPHA;
+    private boolean isShowHiddenFiles = false;
+    private int sortType = SORT_ALPHA;
     private long mDirSize = 0;
-    private Stack<String> mPathStack;
     private ArrayList<String> mDirContent;
+    private String currentPath;
 
-    public FileManager() {
+    public FileManager()
+    {
         mDirContent = new ArrayList<String>();
-        mPathStack = new Stack<String>();
-
-        mPathStack.push("/");
-        mPathStack.push(mPathStack.peek() + "sdcard");
+        currentPath = "/sdcard";
     }
 
-    /**
-     * This will return a string of the current directory path
-     * @return the current directory
-     */
     public String getCurrentDir()
     {
-        return mPathStack.peek();
+        return currentPath;
     }
 
     public void setCurrentDir(String path)
     {
-        mPathStack.clear();
-        mPathStack.push("/");
-        mPathStack.push(path);
+        currentPath = path;
     }
 
-    /**
-     * This will return a string of the current home path.
-     * @return	the home directory
-     */
-    public ArrayList<String> setHomeDir(String name) {
-        //This will eventually be placed as a settings item
-        mPathStack.clear();
-        mPathStack.push("/");
-        mPathStack.push(name);
-
-        return populate_list();
-    }
-
-
-    /**
-     * This will determine if hidden files and folders will be visible to the
-     * user.
-     * @param choice	true if user is veiwing hidden files, false otherwise
-     */
     public void setShowHiddenFiles(boolean choice)
     {
-        mShowHiddenFiles = choice;
+        isShowHiddenFiles = choice;
     }
 
-    /**
-     *
-     * @param type
-     */
     public void setSortType(int type)
     {
-        mSortType = type;
+        sortType = type;
     }
 
-    public ArrayList<String> getCurrentFiles()
+    public ArrayList<FileItem> getCurrentFiles()
     {
-        return populate_list();
+        return getFilelist(currentPath, isShowHiddenFiles, sortType);
     }
 
-    /**
-     * This will return a string that represents the path of the previous path
-     * @return	returns the previous path
-     */
-    public ArrayList<String> getPreviousDir() {
-        int size = mPathStack.size();
-
-        if (size >= 2)
-            mPathStack.pop();
-
-        else if(size == 0)
-            mPathStack.push("/");
-
-        return populate_list();
+    public void movePreviousDir()
+    {
+        currentPath = new File(currentPath).getParent();
     }
 
-    /**
-     *
-     * @param path
-     * @param isFullPath
-     * @return
-     */
-    public ArrayList<String> getNextDir(String path, boolean isFullPath) {
-        int size = mPathStack.size();
-
-        if(!path.equals(mPathStack.peek()) && !isFullPath) {
-            if(size == 1)
-                mPathStack.push("/" + path);
-            else
-                mPathStack.push(mPathStack.peek() + "/" + path);
-        }
-
-        else if(!path.equals(mPathStack.peek()) && isFullPath) {
-            mPathStack.push(path);
-        }
-
-        return populate_list();
+    public void moveDir(String name)
+    {
+        currentPath += "/" + name;
     }
 
-    /**
-     *
-     * @param old		the file to be copied
-     * @param newDir	the directory to move the file to
-     * @return
-     */
-    public int copyToDirectory(String old, String newDir) {
+    static public boolean isDirectory(String path)
+    {
+        return new File(path).isDirectory();
+    }
+
+    public static String integerToIPAddress(int ip)
+    {
+        String ascii_address = "";
+        int[] num = new int[4];
+
+        num[0] = (ip & 0xff000000) >> 24;
+        num[1] = (ip & 0x00ff0000) >> 16;
+        num[2] = (ip & 0x0000ff00) >> 8;
+        num[3] = ip & 0x000000ff;
+
+        ascii_address = num[0] + "." + num[1] + "." + num[2] + "." + num[3];
+
+        return ascii_address;
+    }
+
+    static public int copyToDirectory(String old, String newDir)
+    {
         File old_file = new File(old);
         File temp_dir = new File(newDir);
         byte[] data = new byte[BUFFER];
@@ -187,13 +143,8 @@ public class FileManager
         return 0;
     }
 
-    /**
-     *
-     * @param zipName
-     * @param toDir
-     * @param fromDir
-     */
-    public void extractZipFilesFromDir(String zipName, String toDir, String fromDir) {
+    static public void extractZipFilesFromDir(String zipName, String toDir, String fromDir)
+    {
         if(!(toDir.charAt(toDir.length() - 1) == '/'))
             toDir += "/";
         if(!(fromDir.charAt(fromDir.length() - 1) == '/'))
@@ -204,12 +155,8 @@ public class FileManager
         extractZipFiles(org_path, toDir);
     }
 
-    /**
-     *
-     * @param zip_file
-     * @param directory
-     */
-    public void extractZipFiles(String zip_file, String directory) {
+    static public void extractZipFiles(String zip_file, String directory)
+    {
         byte[] data = new byte[BUFFER];
         String name, path, zipDir;
         ZipEntry entry;
@@ -265,11 +212,8 @@ public class FileManager
         }
     }
 
-    /**
-     *
-     * @param path
-     */
-    public void createZipFile(String path) {
+    static public void createZipFile(String path)
+    {
         File dir = new File(path);
         String[] list = dir.list();
         String name = path.substring(path.lastIndexOf("/"), path.length());
@@ -303,13 +247,8 @@ public class FileManager
         }
     }
 
-    /**
-     *
-     * @param filePath
-     * @param newName
-     * @return
-     */
-    public int renameTarget(String filePath, String newName) {
+    static public int renameTarget(String filePath, String newName)
+    {
         File src = new File(filePath);
         String ext = "";
         File dest;
@@ -322,21 +261,14 @@ public class FileManager
             return -1;
 
         String temp = filePath.substring(0, filePath.lastIndexOf("/"));
-
         dest = new File(temp + "/" + newName + ext);
         if(src.renameTo(dest))
             return 0;
-        else
-            return -1;
+        return -1;
     }
 
-    /**
-     *
-     * @param path
-     * @param name
-     * @return
-     */
-    public int createDir(String path, String name) {
+    static public int createDir(String path, String name)
+    {
         int len = path.length();
 
         if(len < 1 || len < 1)
@@ -351,21 +283,17 @@ public class FileManager
         return -1;
     }
 
-    /**
-     * The full path name of the file to delete.
-     *
-     * @param path name
-     * @return
-     */
-    public int deleteTarget(String path) {
+    static public int deleteTarget(String path)
+    {
         File target = new File(path);
 
-        if(target.exists() && target.isFile() && target.canWrite()) {
+        if(target.exists() && target.isFile() && target.canWrite())
+        {
             target.delete();
             return 0;
         }
-
-        else if(target.exists() && target.isDirectory() && target.canRead()) {
+        else if(target.exists() && target.isDirectory() && target.canRead())
+        {
             String[] file_list = target.list();
 
             if(file_list != null && file_list.length == 0) {
@@ -390,196 +318,22 @@ public class FileManager
         return -1;
     }
 
-    /**
-     *
-     * @param name
-     * @return
-     */
-    public boolean isDirectory(String name) {
-        return new File(mPathStack.peek() + "/" + name).isDirectory();
-    }
-
-    /**
-     * converts integer from wifi manager to an IP address.
-     *
-     * @param des
-     * @return
-     */
-    public static String integerToIPAddress(int ip) {
-        String ascii_address = "";
-        int[] num = new int[4];
-
-        num[0] = (ip & 0xff000000) >> 24;
-        num[1] = (ip & 0x00ff0000) >> 16;
-        num[2] = (ip & 0x0000ff00) >> 8;
-        num[3] = ip & 0x000000ff;
-
-        ascii_address = num[0] + "." + num[1] + "." + num[2] + "." + num[3];
-
-        return ascii_address;
-    }
-
-    /**
-     *
-     * @param dir
-     * @param pathName
-     * @return
-     */
-    public ArrayList<String> searchInDirectory(String dir, String pathName) {
+    static public ArrayList<String> searchInDirectory(String dir, String pathName)
+    {
         ArrayList<String> names = new ArrayList<String>();
         search_file(dir, pathName, names);
-
         return names;
     }
 
-    /**
-     *
-     * @param path
-     * @return
-     */
-    public long getDirSize(String path) {
-        get_dir_size(new File(path));
-
-        return mDirSize;
+    static public long getDirSize(String path)
+    {
+        Long size = new Long(0);
+        get_dir_size(new File(path), size);
+        return size;
     }
 
-
-    private static final Comparator alph = new Comparator<String>() {
-        @Override
-        public int compare(String arg0, String arg1) {
-            return arg0.toLowerCase().compareTo(arg1.toLowerCase());
-        }
-    };
-
-    private final Comparator size = new Comparator<String>() {
-        @Override
-        public int compare(String arg0, String arg1) {
-            String dir = mPathStack.peek();
-            Long first = new File(dir + "/" + arg0).length();
-            Long second = new File(dir + "/" + arg1).length();
-
-            return first.compareTo(second);
-        }
-    };
-
-    private final Comparator type = new Comparator<String>() {
-        @Override
-        public int compare(String arg0, String arg1) {
-            String ext = null;
-            String ext2 = null;
-            int ret;
-
-            try {
-                ext = arg0.substring(arg0.lastIndexOf(".") + 1, arg0.length()).toLowerCase();
-                ext2 = arg1.substring(arg1.lastIndexOf(".") + 1, arg1.length()).toLowerCase();
-
-            } catch (IndexOutOfBoundsException e) {
-                return 0;
-            }
-            ret = ext.compareTo(ext2);
-
-            if (ret == 0)
-                return arg0.toLowerCase().compareTo(arg1.toLowerCase());
-
-            return ret;
-        }
-    };
-
-    /* (non-Javadoc)
-     * this function will take the string from the top of the directory stack
-     * and list all files/folders that are in it and return that list so
-     * it can be displayed. Since this function is called every time we need
-     * to update the the list of files to be shown to the user, this is where
-     * we do our sorting (by type, alphabetical, etc).
-     *
-     * @return
-     */
-    private ArrayList<String> populate_list() {
-
-        if(!mDirContent.isEmpty())
-            mDirContent.clear();
-
-        File file = new File(mPathStack.peek());
-
-        if(file.exists() && file.canRead()) {
-            String[] list = file.list();
-            int len = list.length;
-
-			/* add files/folder to arraylist depending on hidden status */
-            for (int i = 0; i < len; i++) {
-                if(!mShowHiddenFiles) {
-                    if(list[i].toString().charAt(0) != '.')
-                        mDirContent.add(list[i]);
-
-                } else {
-                    mDirContent.add(list[i]);
-                }
-            }
-
-			/* sort the arraylist that was made from above for loop */
-            switch(mSortType) {
-                case SORT_NONE:
-                    //no sorting needed
-                    break;
-
-                case SORT_ALPHA:
-                    Object[] tt = mDirContent.toArray();
-                    mDirContent.clear();
-
-                    Arrays.sort(tt, alph);
-
-                    for (Object a : tt){
-                        mDirContent.add((String)a);
-                    }
-                    break;
-
-                case SORT_SIZE:
-                    int index = 0;
-                    Object[] size_ar = mDirContent.toArray();
-                    String dir = mPathStack.peek();
-
-                    Arrays.sort(size_ar, size);
-
-                    mDirContent.clear();
-                    for (Object a : size_ar) {
-                        if(new File(dir + "/" + (String)a).isDirectory())
-                            mDirContent.add(index++, (String)a);
-                        else
-                            mDirContent.add((String)a);
-                    }
-                    break;
-
-                case SORT_TYPE:
-                    int dirindex = 0;
-                    Object[] type_ar = mDirContent.toArray();
-                    String current = mPathStack.peek();
-
-                    Arrays.sort(type_ar, type);
-                    mDirContent.clear();
-
-                    for (Object a : type_ar) {
-                        if(new File(current + "/" + (String)a).isDirectory())
-                            mDirContent.add(dirindex++, (String)a);
-                        else
-                            mDirContent.add((String)a);
-                    }
-                    break;
-            }
-
-        } else {
-            mDirContent.add("Emtpy");
-        }
-
-        return mDirContent;
-    }
-
-    /*
-     *
-     * @param file
-     * @param zout
-     * @throws IOException
-     */
-    private void zip_folder(File file, ZipOutputStream zout) throws IOException {
+    static private void zip_folder(File file, ZipOutputStream zout) throws IOException
+    {
         byte[] data = new byte[BUFFER];
         int read;
 
@@ -604,11 +358,8 @@ public class FileManager
         }
     }
 
-    /*
-     *
-     * @param path
-     */
-    private void get_dir_size(File path) {
+    static private void get_dir_size(File path, Long dirSize)
+    {
         File[] list = path.listFiles();
         int len;
 
@@ -618,10 +369,10 @@ public class FileManager
             for (int i = 0; i < len; i++) {
                 try {
                     if(list[i].isFile() && list[i].canRead()) {
-                        mDirSize += list[i].length();
+                        dirSize += list[i].length();
 
                     } else if(list[i].isDirectory() && list[i].canRead() && !isSymlink(list[i])) {
-                        get_dir_size(list[i]);
+                        get_dir_size(list[i], dirSize);
                     }
                 } catch(IOException e) {
                     Log.e("IOException", e.getMessage());
@@ -631,11 +382,15 @@ public class FileManager
     }
 
     // Inspired by org.apache.commons.io.FileUtils.isSymlink()
-    private static boolean isSymlink(File file) throws IOException {
+    static private boolean isSymlink(File file) throws IOException
+    {
         File fileInCanonicalDir = null;
-        if (file.getParent() == null) {
+        if (file.getParent() == null)
+        {
             fileInCanonicalDir = file;
-        } else {
+        }
+        else
+        {
             File canonicalDir = file.getParentFile().getCanonicalFile();
             fileInCanonicalDir = new File(canonicalDir, file.getName());
         }
@@ -654,7 +409,8 @@ public class FileManager
      * @param fileName	filename that is being searched for
      * @param n			ArrayList to populate results
      */
-    private void search_file(String dir, String fileName, ArrayList<String> n) {
+    static private void search_file(String dir, String fileName, ArrayList<String> n)
+    {
         File root_dir = new File(dir);
         String[] list = root_dir.list();
 
@@ -678,5 +434,49 @@ public class FileManager
                 }
             }
         }
+    }
+
+    static private ArrayList<FileItem> getFilelist(String path, boolean isShowHiddenFiles, int sortType)
+    {
+        ArrayList<FileItem> fileList = new ArrayList<FileItem>();
+        File pathFile = new File(path);
+
+        if(pathFile.exists() && pathFile.canRead())
+        {
+            String[] list = pathFile.list();
+
+            for (int i = 0; i < list.length; i++)
+            {
+                if(isShowHiddenFiles==false && list[i].charAt(0) == '.')
+                    continue;
+
+                File file = new File(path + "/" + list[i]);
+                fileList.add(new FileItem(
+                        path,
+                        list[i],
+                        file.isDirectory() ? FileItem.TYPE_DIR : FileItem.TYPE_FILE,
+                        file.length()
+                ));
+            }
+
+            switch(sortType)
+            {
+            case SORT_NONE:
+                break;
+
+            case SORT_ALPHA:
+                Collections.sort(fileList, FileItem.CompareAlphIgnoreCase);
+                break;
+
+            case SORT_SIZE:
+                Collections.sort(fileList, FileItem.CompareFileSize);
+                break;
+
+            case SORT_TYPE:
+                Collections.sort(fileList, FileItem.CompareFileType);
+                break;
+            }
+        }
+        return fileList;
     }
 }

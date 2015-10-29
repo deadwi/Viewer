@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -19,25 +21,27 @@ import android.widget.Toast;
 
 public class CustomAdapter extends BaseAdapter
 {
-    private ArrayList<String> m_List;
+    private ArrayList<FileItem> list;
     private FileManager fileManager;
+    private Handler handler;
 
-    public CustomAdapter(FileManager _fileManager)
+    public CustomAdapter(FileManager _fileManager, Handler _handler)
     {
         fileManager = _fileManager;
-        m_List = new ArrayList<String>();
+        handler = _handler;
+        list = new ArrayList<FileItem>();
     }
 
     @Override
     public int getCount()
     {
-        return m_List.size();
+        return list.size();
     }
 
     @Override
     public Object getItem(int position)
     {
-        return m_List.get(position);
+        return list.get(position);
     }
 
     @Override
@@ -61,7 +65,7 @@ public class CustomAdapter extends BaseAdapter
 
             // TextView에 현재 position의 문자열 추가
             TextView text = (TextView) convertView.findViewById(R.id.text);
-            text.setText(m_List.get(position));
+            text.setText(list.get(position).name);
 
             // 버튼을 터치 했을 때 이벤트 발생
             Button btn = (Button) convertView.findViewById(R.id.btn_test);
@@ -69,7 +73,7 @@ public class CustomAdapter extends BaseAdapter
                 @Override
                 public void onClick(View v) {
                     // 터치 시 해당 아이템 이름 출력
-                    Toast.makeText(context, m_List.get(pos), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, list.get(pos).name, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -78,12 +82,16 @@ public class CustomAdapter extends BaseAdapter
                 @Override
                 public void onClick(View v)
                 {
-                    String path = fileManager.getCurrentDir()+"/"+m_List.get(pos);
-                    if(fileManager.isDirectory(path))
+                    FileItem item = list.get(pos);
+                    if(item.type == FileItem.TYPE_DIR)
                     {
+                        fileManager.moveDir(item.name);
+                        Message msg = Message.obtain();
+                        msg.what = 1;
+                        handler.sendMessage(msg);
                     }
                     else
-                        Toast.makeText(context, "리스트 클릭 : "+m_List.get(pos), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "리스트 클릭 : "+list.get(pos).name, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -92,7 +100,7 @@ public class CustomAdapter extends BaseAdapter
                 @Override
                 public boolean onLongClick(View v) {
                     // 터치 시 해당 아이템 이름 출력
-                    Toast.makeText(context, "리스트 롱 클릭 : " + m_List.get(pos), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "리스트 롱 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
                     return true;
                 }
             });
@@ -101,26 +109,25 @@ public class CustomAdapter extends BaseAdapter
         return convertView;
     }
 
-    public void add(String _msg)
+    public void add(FileItem item)
     {
-        m_List.add(_msg);
+        list.add(item);
     }
 
     public void remove(int _position)
     {
-        m_List.remove(_position);
+        list.remove(_position);
     }
 
     public void updateFileList()
     {
-        m_List.clear();
+        list.clear();
 
-        String current = fileManager.getCurrentDir();
-        ArrayList<String> list = fileManager.getNextDir(current, false);
-        for(Iterator<String> iter = list.iterator();iter.hasNext();)
+        ArrayList<FileItem> list = fileManager.getCurrentFiles();
+        for(Iterator<FileItem> iter = list.iterator();iter.hasNext();)
         {
-            String string = iter.next();
-            add(string);
+            FileItem item = iter.next();
+            add(item);
         }
     }
 }
