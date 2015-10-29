@@ -2,6 +2,7 @@ package net.deadwi.viewer;
 
 /**
  * Created by jihun.jo on 2015-10-28.
+ *
  */
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,7 +30,7 @@ public class CustomAdapter extends BaseAdapter
     {
         fileManager = _fileManager;
         handler = _handler;
-        list = new ArrayList<FileItem>();
+        list = new ArrayList<>();
     }
 
     @Override
@@ -63,21 +64,25 @@ public class CustomAdapter extends BaseAdapter
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.file_item, parent, false);
 
-            // TextView에 현재 position의 문자열 추가
             TextView text = (TextView) convertView.findViewById(R.id.text);
             text.setText(list.get(position).name);
 
-            // 버튼을 터치 했을 때 이벤트 발생
+            /*
+            FileItem item = list.get(pos);
             Button btn = (Button) convertView.findViewById(R.id.btn_test);
+            if(item.type == FileItem.TYPE_DIR)
+                btn.setText("DIR");
+            else
+                btn.setText("FILE");
+
             btn.setOnClickListener(new OnClickListener() {
                 @Override
-                public void onClick(View v) {
-                    // 터치 시 해당 아이템 이름 출력
+                public void onClick(View v)
+                {
                     Toast.makeText(context, list.get(pos).name, Toast.LENGTH_SHORT).show();
                 }
             });
 
-            // 리스트 아이템을 터치 했을 때 이벤트 발생
             convertView.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v)
@@ -85,9 +90,9 @@ public class CustomAdapter extends BaseAdapter
                     FileItem item = list.get(pos);
                     if(item.type == FileItem.TYPE_DIR)
                     {
-                        fileManager.moveDir(item.name);
+                        fileManager.moveNextDir(item.name);
                         Message msg = Message.obtain();
-                        msg.what = 1;
+                        msg.what = FullscreenActivity.EVENT_UPDATE_FILE_LIST;
                         handler.sendMessage(msg);
                     }
                     else
@@ -95,15 +100,28 @@ public class CustomAdapter extends BaseAdapter
                 }
             });
 
-            // 리스트 아이템을 길게 터치 했을 떄 이벤트 발생
             convertView.setOnLongClickListener(new OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    // 터치 시 해당 아이템 이름 출력
                     Toast.makeText(context, "리스트 롱 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
                     return true;
                 }
             });
+            */
+        }
+        else
+        {
+            TextView text = (TextView) convertView.findViewById(R.id.text);
+            text.setText(list.get(position).name);
+
+            /*
+            FileItem item = list.get(pos);
+            Button btn = (Button) convertView.findViewById(R.id.btn_test);
+            if(item.type == FileItem.TYPE_DIR)
+                btn.setText("DIR");
+            else
+                btn.setText("FILE");
+            */
         }
 
         return convertView;
@@ -121,13 +139,6 @@ public class CustomAdapter extends BaseAdapter
 
     public void updateFileList()
     {
-        list.clear();
-
-        ArrayList<FileItem> list = fileManager.getCurrentFiles();
-        for(Iterator<FileItem> iter = list.iterator();iter.hasNext();)
-        {
-            FileItem item = iter.next();
-            add(item);
-        }
+        list = fileManager.getCurrentFiles();
     }
 }

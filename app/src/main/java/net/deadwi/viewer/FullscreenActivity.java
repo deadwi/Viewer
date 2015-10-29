@@ -24,6 +24,8 @@ import java.lang.ref.WeakReference;
  */
 public class FullscreenActivity extends AppCompatActivity
 {
+    public static final int EVENT_UPDATE_FILE_LIST = 1001;
+
     private FileManager fileManager;
     private ListView fileListView;
     private CustomAdapter fileListAdapter;
@@ -34,7 +36,7 @@ public class FullscreenActivity extends AppCompatActivity
         private final WeakReference<FullscreenActivity> mActivity;
         public MyHandler(FullscreenActivity activity)
         {
-            mActivity = new WeakReference<FullscreenActivity>(activity);
+            mActivity = new WeakReference<>(activity);
         }
         @Override
         public void handleMessage(Message msg)
@@ -64,6 +66,28 @@ public class FullscreenActivity extends AppCompatActivity
 
         fileListAdapter.updateFileList();
 
+        findViewById(R.id.buttonUpFolder).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                fileManager.movePreviousDir();
+                updateFileList();
+            }
+        });
+        findViewById(R.id.buttonPrevPage).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                fileListView.setSelectionAfterHeaderView();
+            }
+        });
+        findViewById(R.id.buttonNextPage).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+            }
+        });
+
         /*
         mContentView = findViewById(R.id.fullscreen_content);
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -87,10 +111,8 @@ public class FullscreenActivity extends AppCompatActivity
     {
         switch (msg.what)
         {
-            case 1:
-                Log.d("a","hhhh");
-                fileListAdapter.updateFileList();
-                fileListAdapter.notifyDataSetChanged();
+            case EVENT_UPDATE_FILE_LIST:
+                updateFileList();
                 break;
         }
     }
@@ -104,11 +126,18 @@ public class FullscreenActivity extends AppCompatActivity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
+    private void updateFileList()
+    {
+        fileListAdapter.updateFileList();
+        fileListAdapter.notifyDataSetChanged();
+    }
+
     private OnItemClickListener onClickListItem = new OnItemClickListener()
     {
         @Override
         public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
         {
+            Log.d("MAIN","item click");
             // 이벤트 발생 시 해당 아이템 위치의 텍스트를 출력
             //Toast.makeText(getApplicationContext(), fileListAdapter.getItem(arg2), Toast.LENGTH_SHORT).show();
         }

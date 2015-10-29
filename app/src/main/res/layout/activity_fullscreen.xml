@@ -21,18 +21,60 @@
         android:paddingLeft="8dp"
         android:paddingRight="8dp">
 
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0.01">
+
+            <Button
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_UP"
+                android:id="@+id/buttonUpFolder" />
+
+            <EditText
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:id="@+id/editText"
+                android:layout_weight="1"
+                android:inputType="none"
+                android:autoText="false"
+                android:background="@drawable/border"
+                android:layout_margin="5dp"
+                android:editable="false"
+                android:hint="@string/TEXT_SEARCH" />
+
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_PREV_PAGE"
+                android:id="@+id/buttonPrevPage" />
+
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_NEXT_PAGE"
+                android:id="@+id/buttonNextPage" />
+
+        </LinearLayout>
+
         <ListView
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:id="@+id/listView"
             android:layout_gravity="center_horizontal"
-            android:layout_weight="0.98" />
+            android:background="@drawable/border"
+            android:padding="10dp"
+            android:layout_weight="1" />
 
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal">
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0.01">
 
             <Button
                 android:layout_width="80dp"

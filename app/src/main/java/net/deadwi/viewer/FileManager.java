@@ -20,22 +20,19 @@ import android.util.Log;
 
 public class FileManager
 {
-    public static final int SORT_NONE = 	0;
-    public static final int SORT_ALPHA = 	1;
-    public static final int SORT_TYPE = 	2;
-    public static final int SORT_SIZE = 	3;
+    public static final int SORT_NONE = 0;
+    public static final int SORT_ALPHA = 1;
+    public static final int SORT_TYPE = 2;
+    public static final int SORT_SIZE = 3;
     private static final int BUFFER = 1024*4;
 
     private boolean isShowHiddenFiles = false;
     private int sortType = SORT_ALPHA;
-    private long mDirSize = 0;
-    private ArrayList<String> mDirContent;
     private String currentPath;
 
     public FileManager()
     {
-        mDirContent = new ArrayList<String>();
-        currentPath = "/sdcard";
+        currentPath = "/";
     }
 
     public String getCurrentDir()
@@ -60,17 +57,23 @@ public class FileManager
 
     public ArrayList<FileItem> getCurrentFiles()
     {
+        Log.d("FILE",currentPath);
         return getFilelist(currentPath, isShowHiddenFiles, sortType);
     }
 
     public void movePreviousDir()
     {
-        currentPath = new File(currentPath).getParent();
+        if(currentPath.compareTo("/")==0 || currentPath.isEmpty())
+            currentPath="/";
+        else
+            currentPath = new File(currentPath).getParent();
     }
 
-    public void moveDir(String name)
+    public void moveNextDir(String name)
     {
-        currentPath += "/" + name;
+        if(currentPath.isEmpty() || (currentPath.lastIndexOf(0)=='/' || currentPath.lastIndexOf(0)=='\\'))
+            currentPath += "/";
+        currentPath += name;
     }
 
     static public boolean isDirectory(String path)
