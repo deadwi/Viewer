@@ -1,20 +1,24 @@
 package net.deadwi.viewer;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.view.inputmethod.InputMethodManager;
 
 import java.lang.ref.WeakReference;
 
@@ -62,27 +66,26 @@ public class FullscreenActivity extends AppCompatActivity
         fileListAdapter = new CustomAdapter(fileManager, handler);
         fileListView = (ListView) findViewById(R.id.listView);
         fileListView.setAdapter(fileListAdapter);
-        fileListView.setOnItemClickListener(onClickListItem);
 
-        fileListAdapter.updateFileList();
+        refreshFileList(true);
 
         // 상위 디렉토리
         findViewById(R.id.buttonUpFolder).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
+            public void onClick(View view) {
                 fileManager.movePreviousDir();
-                updateFileList();
+                refreshFileList(true);
             }
         });
         // 이전 페이지
         findViewById(R.id.buttonPrevPage).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
+            public void onClick(View view) {
+                hideKeyboard();
+
                 int visibleChildCount = (fileListView.getLastVisiblePosition() - fileListView.getFirstVisiblePosition()) + 1;
-                int prevPos = fileListView.getFirstVisiblePosition()-visibleChildCount+2;
-                if(prevPos<0)
+                int prevPos = fileListView.getFirstVisiblePosition() - visibleChildCount + 2;
+                if (prevPos < 0)
                     prevPos = 0;
                 fileListView.setSelection(prevPos);
             }
@@ -90,16 +93,16 @@ public class FullscreenActivity extends AppCompatActivity
         // 다음 페이지
         findViewById(R.id.buttonNextPage).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view)
-            {
+            public void onClick(View view) {
+                hideKeyboard();
                 fileListView.setSelection(fileListView.getLastVisiblePosition());
             }
         });
         // 첫페이지
         findViewById(R.id.buttonPrevPage).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            public boolean onLongClick(View view)
-            {
+            public boolean onLongClick(View view) {
+                hideKeyboard();
                 fileListView.setSelectionAfterHeaderView();
                 return true;
             }
@@ -107,13 +110,37 @@ public class FullscreenActivity extends AppCompatActivity
         // 마지막페이지
         findViewById(R.id.buttonNextPage).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            public boolean onLongClick(View view)
-            {
-                fileListView.setSelection(fileListAdapter.getCount()-1);
+            public boolean onLongClick(View view) {
+                hideKeyboard();
+                fileListView.setSelection(fileListAdapter.getCount() - 1);
                 return true;
             }
         });
+        // 검색
+        findViewById(R.id.editText).setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                    refreshFileList(false);
+                    return true;
+                }
+                return false;
+            }
+        });
 
+        /*
+        findViewById(R.id.touchInterceptor).setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                if (event.getAction() == MotionEvent.ACTION_DOWN)
+                {
+                    hideKeyboard();
+                }
+                return false;
+            }
+        });
+        */
 
         /*
         mContentView = findViewById(R.id.fullscreen_content);
@@ -139,7 +166,7 @@ public class FullscreenActivity extends AppCompatActivity
         switch (msg.what)
         {
             case EVENT_UPDATE_FILE_LIST:
-                updateFileList();
+                refreshFileList(true);
                 break;
         }
     }
@@ -153,20 +180,25 @@ public class FullscreenActivity extends AppCompatActivity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
-    private void updateFileList()
+    private void hideKeyboard()
     {
-        fileListAdapter.updateFileList();
-        fileListAdapter.notifyDataSetChanged();
+        InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        View currentFocus = this.getCurrentFocus();
+        if(currentFocus!=null)
+        {
+            currentFocus.clearFocus();
+            inputManager.hideSoftInputFromWindow(currentFocus.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        }
     }
 
-    private OnItemClickListener onClickListItem = new OnItemClickListener()
+    private void refreshFileList(boolean isClearStatus)
     {
-        @Override
-        public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
-        {
-            Log.d("MAIN","item click");
-            // 이벤트 발생 시 해당 아이템 위치의 텍스트를 출력
-            //Toast.makeText(getApplicationContext(), fileListAdapter.getItem(arg2), Toast.LENGTH_SHORT).show();
-        }
-    };
+        EditText search = (EditText) findViewById(R.id.editText);
+        if(isClearStatus)
+            search.setText("");
+
+        hideKeyboard();
+        fileListAdapter.updateFileList(search.getText().toString());
+        fileListAdapter.notifyDataSetChanged();
+    }
 }

@@ -131,9 +131,12 @@ public class CustomAdapter extends BaseAdapter
         list.remove(_position);
     }
 
-    public void updateFileList()
+    public void updateFileList(String keyword)
     {
-        list = fileManager.getCurrentFiles();
+        if(keyword.isEmpty())
+            list = fileManager.getCurrentFiles();
+        else
+            list = fileManager.getMatchFiles(keyword);
     }
 }
 

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Stack;
 import java.io.File;
 import java.io.BufferedInputStream;
@@ -58,7 +59,18 @@ public class FileManager
     public ArrayList<FileItem> getCurrentFiles()
     {
         Log.d("FILE",currentPath);
-        return getFilelist(currentPath, isShowHiddenFiles, sortType);
+        ArrayList<FileItem> fileList = getFilelist(currentPath, isShowHiddenFiles);
+        sortFilelist(fileList,sortType);
+        return fileList;
+    }
+
+    public ArrayList<FileItem> getMatchFiles(String keyword)
+    {
+        Log.d("FILE",currentPath);
+        ArrayList<FileItem> fileList = getFilelist(currentPath, isShowHiddenFiles);
+        filterFilelist(fileList, keyword);
+        sortFilelist(fileList,sortType);
+        return fileList;
     }
 
     public void movePreviousDir()
@@ -437,7 +449,7 @@ public class FileManager
         }
     }
 
-    static private ArrayList<FileItem> getFilelist(String path, boolean isShowHiddenFiles, int sortType)
+    static private ArrayList<FileItem> getFilelist(String path, boolean isShowHiddenFiles)
     {
         ArrayList<FileItem> fileList = new ArrayList<FileItem>();
         File pathFile = new File(path);
@@ -459,9 +471,26 @@ public class FileManager
                         file.length()
                 ));
             }
+        }
+        return fileList;
+    }
 
-            switch(sortType)
-            {
+    static private void filterFilelist(ArrayList<FileItem> fileList, String _keyword)
+    {
+        String keyword = _keyword.toLowerCase();
+        Iterator<FileItem> iter = fileList.iterator();
+        while (iter.hasNext())
+        {
+            FileItem item = iter.next();
+            if(item.name.toLowerCase().contains(keyword)==false)
+                iter.remove();
+        }
+    }
+
+    static private void sortFilelist(ArrayList<FileItem> fileList, int sortType)
+    {
+        switch(sortType)
+        {
             case SORT_NONE:
                 break;
 
@@ -476,8 +505,6 @@ public class FileManager
             case SORT_TYPE:
                 Collections.sort(fileList, FileItem.CompareFileType);
                 break;
-            }
         }
-        return fileList;
     }
 }
