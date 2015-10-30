@@ -43,7 +43,7 @@
                 android:autoText="false"
                 android:background="@drawable/border"
                 android:layout_margin="5dp"
-                android:editable="false"
+                android:editable="true"
                 android:hint="@string/TEXT_SEARCH" />
 
             <Button

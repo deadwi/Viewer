@@ -71,7 +71,7 @@ public class FileManager
 
     public void moveNextDir(String name)
     {
-        if(currentPath.isEmpty() || (currentPath.lastIndexOf(0)=='/' || currentPath.lastIndexOf(0)=='\\'))
+        if(currentPath.isEmpty() || (currentPath.charAt(currentPath.length()-1)!='/' && currentPath.charAt(currentPath.length()-1)!='\\'))
             currentPath += "/";
         currentPath += name;
     }
@@ -83,7 +83,7 @@ public class FileManager
 
     public static String integerToIPAddress(int ip)
     {
-        String ascii_address = "";
+        String ascii_address;
         int[] num = new int[4];
 
         num[0] = (ip & 0xff000000) >> 24;
@@ -132,13 +132,11 @@ public class FileManager
         }else if(old_file.isDirectory() && temp_dir.isDirectory() && temp_dir.canWrite()) {
             String files[] = old_file.list();
             String dir = newDir + old.substring(old.lastIndexOf("/"), old.length());
-            int len = files.length;
 
             if(!new File(dir).mkdir())
                 return -1;
-
-            for(int i = 0; i < len; i++)
-                copyToDirectory(old + "/" + files[i], dir);
+            for (String file : files)
+                copyToDirectory(old + "/" + file, dir);
 
         } else if(!temp_dir.canWrite())
             return -1;
@@ -450,7 +448,7 @@ public class FileManager
 
             for (int i = 0; i < list.length; i++)
             {
-                if(isShowHiddenFiles==false && list[i].charAt(0) == '.')
+                if(!isShowHiddenFiles && list[i].charAt(0) == '.')
                     continue;
 
                 File file = new File(path + "/" + list[i]);

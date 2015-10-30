@@ -66,6 +66,7 @@ public class FullscreenActivity extends AppCompatActivity
 
         fileListAdapter.updateFileList();
 
+        // 상위 디렉토리
         findViewById(R.id.buttonUpFolder).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
@@ -74,19 +75,45 @@ public class FullscreenActivity extends AppCompatActivity
                 updateFileList();
             }
         });
+        // 이전 페이지
         findViewById(R.id.buttonPrevPage).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
             {
-                fileListView.setSelectionAfterHeaderView();
+                int visibleChildCount = (fileListView.getLastVisiblePosition() - fileListView.getFirstVisiblePosition()) + 1;
+                int prevPos = fileListView.getFirstVisiblePosition()-visibleChildCount+2;
+                if(prevPos<0)
+                    prevPos = 0;
+                fileListView.setSelection(prevPos);
             }
         });
+        // 다음 페이지
         findViewById(R.id.buttonNextPage).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
             {
+                fileListView.setSelection(fileListView.getLastVisiblePosition());
             }
         });
+        // 첫페이지
+        findViewById(R.id.buttonPrevPage).setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view)
+            {
+                fileListView.setSelectionAfterHeaderView();
+                return true;
+            }
+        });
+        // 마지막페이지
+        findViewById(R.id.buttonNextPage).setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view)
+            {
+                fileListView.setSelection(fileListAdapter.getCount()-1);
+                return true;
+            }
+        });
+
 
         /*
         mContentView = findViewById(R.id.fullscreen_content);

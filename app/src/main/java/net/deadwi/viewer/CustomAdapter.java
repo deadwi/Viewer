@@ -26,6 +26,11 @@ public class CustomAdapter extends BaseAdapter
     private FileManager fileManager;
     private Handler handler;
 
+    private class CustomHolder {
+        TextView    textHead;
+        TextView    text;
+    }
+
     public CustomAdapter(FileManager _fileManager, Handler _handler)
     {
         fileManager = _fileManager;
@@ -57,6 +62,10 @@ public class CustomAdapter extends BaseAdapter
         final int pos = position;
         final Context context = parent.getContext();
 
+        TextView text;
+        TextView textHead;
+        CustomHolder holder;
+
         // 리스트가 길어지면서 현재 화면에 보이지 않는 아이템은 converView가 null인 상태로 들어 옴
         if ( convertView == null )
         {
@@ -64,66 +73,51 @@ public class CustomAdapter extends BaseAdapter
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.file_item, parent, false);
 
-            TextView text = (TextView) convertView.findViewById(R.id.text);
-            text.setText(list.get(position).name);
+            text = (TextView) convertView.findViewById(R.id.text);
+            textHead = (TextView) convertView.findViewById(R.id.textHead);
 
-            /*
-            FileItem item = list.get(pos);
-            Button btn = (Button) convertView.findViewById(R.id.btn_test);
-            if(item.type == FileItem.TYPE_DIR)
-                btn.setText("DIR");
-            else
-                btn.setText("FILE");
-
-            btn.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v)
-                {
-                    Toast.makeText(context, list.get(pos).name, Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            convertView.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v)
-                {
-                    FileItem item = list.get(pos);
-                    if(item.type == FileItem.TYPE_DIR)
-                    {
-                        fileManager.moveNextDir(item.name);
-                        Message msg = Message.obtain();
-                        msg.what = FullscreenActivity.EVENT_UPDATE_FILE_LIST;
-                        handler.sendMessage(msg);
-                    }
-                    else
-                        Toast.makeText(context, "리스트 클릭 : "+list.get(pos).name, Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            convertView.setOnLongClickListener(new OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    Toast.makeText(context, "리스트 롱 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
-                    return true;
-                }
-            });
-            */
+            // 홀더 생성 및 Tag로 등록
+            holder = new CustomHolder();
+            holder.text = text;
+            holder.textHead = textHead;
+            convertView.setTag(holder);
         }
         else
         {
-            TextView text = (TextView) convertView.findViewById(R.id.text);
-            text.setText(list.get(position).name);
-
-            /*
-            FileItem item = list.get(pos);
-            Button btn = (Button) convertView.findViewById(R.id.btn_test);
-            if(item.type == FileItem.TYPE_DIR)
-                btn.setText("DIR");
-            else
-                btn.setText("FILE");
-            */
+            holder = (CustomHolder) convertView.getTag();
+            text = holder.text;
+            textHead = holder.textHead;
         }
+        text.setText(list.get(position).name);
+        if(list.get(position).type == FileItem.TYPE_DIR)
+            textHead.setText("D");
+        else
+            textHead.setText("F");
 
+        convertView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                FileItem item = list.get(pos);
+                if(item.type == FileItem.TYPE_DIR)
+                {
+                    fileManager.moveNextDir(item.name);
+                    Message msg = Message.obtain();
+                    msg.what = FullscreenActivity.EVENT_UPDATE_FILE_LIST;
+                    handler.sendMessage(msg);
+                }
+                else
+                    Toast.makeText(context, "리스트 클릭 : "+list.get(pos).name, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        convertView.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Toast.makeText(context, "리스트 롱 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
         return convertView;
     }
 
@@ -142,3 +136,4 @@ public class CustomAdapter extends BaseAdapter
         list = fileManager.getCurrentFiles();
     }
 }
+

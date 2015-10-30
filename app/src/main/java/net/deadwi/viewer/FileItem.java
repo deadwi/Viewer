@@ -25,9 +25,9 @@ public class FileItem
 
     private static int compareDir(FileItem lhs, FileItem rhs)
     {
-        if(lhs.type==TYPE_DIR && lhs.type!=TYPE_DIR)
+        if(lhs.type==TYPE_DIR && rhs.type!=TYPE_DIR)
             return -1;
-        else if(lhs.type!=TYPE_DIR && lhs.type==TYPE_DIR)
+        else if(lhs.type!=TYPE_DIR && rhs.type==TYPE_DIR)
             return 1;
         return 0;
     }
@@ -69,8 +69,8 @@ public class FileItem
             if(c!=0)
                 return c;
 
-            String ext = null;
-            String ext2 = null;
+            String ext;
+            String ext2;
             int ret;
 
             try
