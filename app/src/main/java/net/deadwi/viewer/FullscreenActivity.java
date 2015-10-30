@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.view.inputmethod.InputMethodManager;
+import android.content.Intent;
 
 import java.lang.ref.WeakReference;
 
@@ -29,6 +30,7 @@ import java.lang.ref.WeakReference;
 public class FullscreenActivity extends AppCompatActivity
 {
     public static final int EVENT_UPDATE_FILE_LIST = 1001;
+    public static final int EVENT_VIEW_FILE = 1002;
 
     private FileManager fileManager;
     private ListView fileListView;
@@ -167,6 +169,10 @@ public class FullscreenActivity extends AppCompatActivity
         {
             case EVENT_UPDATE_FILE_LIST:
                 refreshFileList(true);
+                break;
+            case EVENT_VIEW_FILE:
+                Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
+                startActivity(myIntent);
                 break;
         }
     }

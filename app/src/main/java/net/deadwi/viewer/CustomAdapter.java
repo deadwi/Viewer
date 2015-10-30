@@ -107,7 +107,13 @@ public class CustomAdapter extends BaseAdapter
                     handler.sendMessage(msg);
                 }
                 else
-                    Toast.makeText(context, "리스트 클릭 : "+list.get(pos).name, Toast.LENGTH_SHORT).show();
+                {
+                    Toast.makeText(context, "리스트 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
+
+                    Message msg = Message.obtain();
+                    msg.what = FullscreenActivity.EVENT_VIEW_FILE;
+                    handler.sendMessage(msg);
+                }
             }
         });
 

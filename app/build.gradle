@@ -1,27 +1,59 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+model {
+    android {
+        compileSdkVersion = 23
+        buildToolsVersion = "23.0.1"
 
-    defaultConfig {
-        applicationId "net.deadwi.viewer"
-        minSdkVersion 15
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        defaultConfig.with {
+            applicationId = "net.deadwi.viewer"
+            minSdkVersion.apiLevel    = 15
+            targetSdkVersion.apiLevel = 23
+            versionCode = 1
+            versionName = "1.0"
         }
+
+    }
+
+    compileOptions.with {
+        sourceCompatibility=JavaVersion.VERSION_1_7
+        targetCompatibility=JavaVersion.VERSION_1_7
+    }
+
+    android.ndk {
+        moduleName = "plasma"
+        ldLibs += ["m","log","jnigraphics"]
+    }
+
+    android.buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles += file('proguard-rules.txt')
+
+            println(proguardFiles)
+        }
+    }
+    android.productFlavors {
+        create ("arm7") {
+            ndk.abiFilters += "armeabi-v7a"
+        }
+        create ("arm8") {
+            ndk.abiFilters += "arm64-v8a"
+        }
+        create ("x86-32") {
+            ndk.abiFilters += "x86"
+        }
+        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
+        // https://developer.android.com/ndk/guides/abis.html#sa
+
+        // build one including all cpu architectures
+        create("all")
     }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.0'
     compile 'com.android.support:support-v4:23.1.0'
+    //testCompile 'junit:junit:4.12'
 }
