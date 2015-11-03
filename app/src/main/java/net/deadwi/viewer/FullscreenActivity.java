@@ -171,8 +171,19 @@ public class FullscreenActivity extends AppCompatActivity
                 refreshFileList(true);
                 break;
             case EVENT_VIEW_FILE:
-                Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
-                startActivity(myIntent);
+                if(fileManager.isZipFile(msg.getData().getString("name")))
+                {
+                    String fullPath = msg.getData().getString("path");
+                    if(fullPath.endsWith("/")==false)
+                        fullPath += "/";
+                    fullPath += msg.getData().getString("name");
+                    fileManager.setCurrentDir(fullPath);
+                    refreshFileList(true);
+                }
+                else {
+                    Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
+                    startActivity(myIntent);
+                }
                 break;
         }
     }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.LayoutInflater;
@@ -111,6 +112,10 @@ public class CustomAdapter extends BaseAdapter
                     Toast.makeText(context, "리스트 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
 
                     Message msg = Message.obtain();
+                    Bundle data = new Bundle();
+                    data.putString("path", item.path);
+                    data.putString("name", item.name);
+                    msg.setData(data);
                     msg.what = FullscreenActivity.EVENT_VIEW_FILE;
                     handler.sendMessage(msg);
                 }

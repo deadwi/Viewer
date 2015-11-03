@@ -1,5 +1,8 @@
 package net.deadwi.viewer;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,15 +61,19 @@ public class FileManager
 
     public ArrayList<FileItem> getCurrentFiles()
     {
-        Log.d("FILE",currentPath);
-        ArrayList<FileItem> fileList = getFilelist(currentPath, isShowHiddenFiles);
+        Log.d("FILE", currentPath);
+        ArrayList<FileItem> fileList;
+        if(isDirectory(currentPath)==false && isZipFile(currentPath))
+            fileList = getFileListFromZipFile(currentPath,"/");
+        else
+            fileList = getFilelist(currentPath, isShowHiddenFiles);
         sortFilelist(fileList,sortType);
         return fileList;
     }
 
     public ArrayList<FileItem> getMatchFiles(String keyword)
     {
-        Log.d("FILE",currentPath);
+        Log.d("FILE", currentPath);
         ArrayList<FileItem> fileList = getFilelist(currentPath, isShowHiddenFiles);
         filterFilelist(fileList, keyword);
         sortFilelist(fileList,sortType);
@@ -156,6 +163,11 @@ public class FileManager
         return 0;
     }
 
+    static public boolean isZipFile(String path)
+    {
+        return path.toLowerCase().endsWith(".zip");
+    }
+
     static public void extractZipFilesFromDir(String zipName, String toDir, String fromDir)
     {
         if(!(toDir.charAt(toDir.length() - 1) == '/'))
@@ -166,6 +178,35 @@ public class FileManager
         String org_path = fromDir + zipName;
 
         extractZipFiles(org_path, toDir);
+    }
+
+    static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
+    {
+        ArrayList<FileItem> fileList = new ArrayList<FileItem>();
+
+        ZipEntry entry;
+        ZipInputStream zipstream;
+        try {
+            zipstream = new ZipInputStream(new FileInputStream(zipFile));
+            //zipstream.g
+            while((entry = zipstream.getNextEntry()) != null) {
+                String name = new String(entry.getName());
+                fileList.add(new FileItem(
+                        zipFile,
+                        name,
+                        entry.isDirectory() ? FileItem.TYPE_DIR : FileItem.TYPE_FILE,
+                        entry.getSize()
+                ));
+
+                zipstream.closeEntry();
+            }
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return fileList;
     }
 
     static public void extractZipFiles(String zip_file, String directory)
