@@ -22,6 +22,8 @@ import java.util.zip.ZipOutputStream;
 
 import android.util.Log;
 
+import net.deadwi.library.MinizipWrapper;
+
 public class FileManager
 {
     public static final int SORT_NONE = 0;
@@ -183,6 +185,15 @@ public class FileManager
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {
         ArrayList<FileItem> fileList = new ArrayList<FileItem>();
+
+        MinizipWrapper minizip = new MinizipWrapper();
+        //String filename = minizip.getFilenameInZip(zipFile);
+        //Log.d("ZIP",filename);
+        ArrayList<String> filenames = (ArrayList<String>)minizip.getFilenamesInZip(zipFile);
+        for (String filename : filenames)
+        {
+            Log.d("ZIP",filename);
+        }
 
         ZipEntry entry;
         ZipInputStream zipstream;

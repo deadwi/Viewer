@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "com_annimon_minizipandroid_MinizipWrapper.h"
+#include "minizip.h"
 #include "unzip.h"
 #include "zip.h"
 
@@ -166,104 +166,8 @@ int extractCurrentFile(unzFile uf, const char *password) {
     return status;
 }
 
-JNIEXPORT jint JNICALL Java_com_annimon_minizipandroid_MinizipWrapper_createZip(
-  JNIEnv * env, jobject, jstring zipfileStr, jstring filenameStr, jstring passwordStr) {
-
-    jboolean isCopy;
-    const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
-    const char * filename = env->GetStringUTFChars(filenameStr, &isCopy);
-    const char * password = env->GetStringUTFChars(passwordStr, &isCopy);
-
-    int status = 0;
-    int opt_compress_level = Z_DEFAULT_COMPRESSION;
-
-    // Create archive zipfilename
-    zipFile zf = zipOpen64(zipfilename, APPEND_STATUS_CREATE);
-    if (zf == NULL) {
-        status = ERROR_CREATE_ZIP;
-    }
-
-    int size_buf = WRITE_BUFFER_SIZE;
-    Bytef* buf = (Bytef*) malloc(size_buf);
-
-    // Get information about the file on disk so we can store it in zip
-    zip_fileinfo zi = { 0 };
-    getFileTime(filename, &zi.tmz_date, &zi.dosDate);
-
-    unsigned long crcFile = 0;
-    if (status == ZIP_OK) {
-        status = getCRC32(filename, buf, size_buf, &crcFile);
-    }
-
-    int zip64 = isLargeFile(filename);
-
-    // Construct the filename that our file will be stored in the zip as.
-    const char *savefilenameinzip = filename;
-    {
-        const char *tmpptr = NULL;
-        const char *lastslash = 0;
-
-        for (tmpptr = savefilenameinzip; *tmpptr; tmpptr++) {
-            if (*tmpptr == '\\' || *tmpptr == '/') {
-                lastslash = tmpptr;
-            }
-        }
-        if (lastslash != NULL) {
-            savefilenameinzip = lastslash + 1;
-        }
-    }
-
-    // Create zip file
-    status = zipOpenNewFileInZip3_64(zf, savefilenameinzip, &zi, NULL, 0, NULL, 0, NULL /* comment*/,
-    		(opt_compress_level != 0) ? Z_DEFLATED : 0, opt_compress_level, 0,
-            -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, password, crcFile, zip64);
-
-    // Add file to zip
-    FILE *fin = NULL;
-    if (status == ZIP_OK) {
-        fin = fopen64(filename, "rb");
-        if (fin == NULL) {
-        	status = ERROR_FILE_NOT_FOUND;
-        }
-    }
-
-    int size_read = 0;
-    if (status == ZIP_OK) {
-        // Read contents of file and write it to zip
-        do {
-            size_read = (int) fread(buf, 1, size_buf, fin);
-            if ((size_read < size_buf) && (feof(fin) == 0)) {
-                status = ERROR_WHILE_READ;
-            }
-
-            if (size_read > 0) {
-                status = zipWriteInFileInZip(zf, buf, size_read);
-            }
-        } while ((status == ZIP_OK) && (size_read > 0));
-    }
-
-    if (fin) {
-    	fclose(fin);
-    }
-
-    if (status >= 0) {
-        status = zipCloseFileInZip(zf);
-    }
-
-    zipClose(zf, NULL);
-
-    // Release memory
-    free(buf);
-    env->ReleaseStringUTFChars(zipfileStr, zipfilename);
-    env->ReleaseStringUTFChars(filenameStr, filename);
-    env->ReleaseStringUTFChars(passwordStr, password);
-
-    return status;
-}
-
-JNIEXPORT jint JNICALL Java_com_annimon_minizipandroid_MinizipWrapper_extractZip(
-  JNIEnv * env, jobject, jstring zipfileStr, jstring dirnameStr, jstring passwordStr) {
-
+JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_extractZip(JNIEnv * env, jobject, jstring zipfileStr, jstring dirnameStr, jstring passwordStr)
+{
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     const char * dirname = env->GetStringUTFChars(dirnameStr, &isCopy);
@@ -298,9 +202,8 @@ JNIEXPORT jint JNICALL Java_com_annimon_minizipandroid_MinizipWrapper_extractZip
     return status;
 }
 
-JNIEXPORT jstring JNICALL Java_com_annimon_minizipandroid_MinizipWrapper_getFilenameInZip(
-  JNIEnv * env, jobject, jstring zipfileStr) {
-
+JNIEXPORT jstring JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenameInZip(JNIEnv * env, jobject, jstring zipfileStr)
+{
 	jboolean isCopy;
 	const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
 
@@ -328,4 +231,33 @@ JNIEXPORT jstring JNICALL Java_com_annimon_minizipandroid_MinizipWrapper_getFile
 	env->ReleaseStringUTFChars(zipfileStr, zipfilename);
 
 	return result;
+}
+
+JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZip(JNIEnv * env, jobject, jstring zipfileStr)
+{
+    jboolean isCopy;
+    const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
+    unzFile uf = NULL;
+    if (zipfilename != NULL)
+        uf = unzOpen64(zipfilename);
+    if (uf == NULL)
+        return NULL;
+
+    unz_file_info64 file_info = { 0 };
+    char filename_in_zip[MAX_FILENAME_LEN] = { 0 };
+    int status = unzGetCurrentFileInfo64(uf, &file_info, filename_in_zip, sizeof(filename_in_zip), NULL, 0, NULL, 0);
+    if (status != UNZ_OK)
+        return NULL;
+
+
+    jclass clazz = (*env).FindClass("java/util/ArrayList");
+    jobject listObj = (*env).NewObject(clazz, (*env).GetMethodID(clazz, "<init>", "()V"));
+
+    jstring result = env->NewStringUTF((const char*) &filename_in_zip);
+    (*env).CallBooleanMethod(listObj, (*env).GetMethodID(clazz, "add", "(Ljava/lang/Object;)Z"), result);
+
+    // Release memory
+    env->ReleaseStringUTFChars(zipfileStr, zipfilename);
+
+    return listObj;
 }
