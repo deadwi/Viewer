@@ -86,6 +86,23 @@ static void fill_plasma( AndroidBitmapInfo*  info, void*  pixels)
 static void copy_pixels( AndroidBitmapInfo*  info, void*  from, void* to)
 {
     memcpy(to,from,info->height*info->stride);
+    /*
+    int  yy;
+    for (yy = 0; yy < info->height; yy++)
+    {
+        uint16_t* lineFrom = (uint16_t*)from;
+        uint16_t* lineTo = (uint16_t*)to;
+
+        int xx;
+        for (xx = 0; xx < info->width; xx++)
+        {
+            lineTo[xx] = lineFrom[xx];
+        }
+        // go to next line
+        from = (char*)from + info->stride;
+        to = (char*)to + info->stride;
+    }
+     */
 }
 
 
@@ -133,8 +150,7 @@ JNIEXPORT void JNICALL Java_net_deadwi_viewer_FastImage_renderPlasma2(JNIEnv *en
         FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
         FreeImage_FlipVertical(dib565);
 
-        //fill_plasma(&info, pixels);
-        copy_pixels(&info, dib565->data, pixels);
+        copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
 
         FreeImage_Unload(dib565);
         FreeImage_Unload(rescaled);
@@ -187,8 +203,7 @@ JNIEXPORT void JNICALL Java_net_deadwi_viewer_FastImage_renderPlasma3(JNIEnv *en
         FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
         FreeImage_FlipVertical(dib565);
 
-        //fill_plasma(&info, pixels);
-        copy_pixels(&info, dib565->data, pixels);
+        copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
 
         FreeImage_Unload(dib565);
         FreeImage_Unload(rescaled);

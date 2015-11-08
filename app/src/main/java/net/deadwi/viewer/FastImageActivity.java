@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.content.Context;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,11 +18,14 @@ import android.view.WindowManager;
 
 import net.deadwi.library.MinizipWrapper;
 
-public class FastImageActivity extends Activity
+public class FastImageActivity extends AppCompatActivity
 {
     private FastImage fastView;
     private int width;
     private int height;
+    private String zipPath;
+    private String[] files;
+    private int fileIndex;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -30,8 +35,21 @@ public class FastImageActivity extends Activity
         height = getWindowManager().getDefaultDisplay().getHeight();
 
         String path = getIntent().getStringExtra("path");
-        String zipPath = getIntent().getStringExtra("zipPath");
+        zipPath = getIntent().getStringExtra("zipPath");
+        files = getIntent().getStringArrayExtra("files");
 
+        fileIndex = -1;
+        for(int i=0;i<files.length;i++)
+        {
+            if(files[i]==null)
+                continue;;
+
+            if(path.compareTo(files[i])==0)
+            {
+                fileIndex = i;
+                break;
+            }
+        }
 
         if(zipPath!=null)
         {
@@ -42,11 +60,29 @@ public class FastImageActivity extends Activity
             fastView = new FastImage(this, width, height, path);
         fastView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                if (event.getAction() == MotionEvent.ACTION_DOWN)
+                {
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
-                    if (event.getY() < (height/4))
+                    if (event.getX() < (width/4))
+                    {
+                        if(fileIndex>0)
+                        {
+                            fileIndex--;
+                            drawImage();
+                        }
+                    }
+                    else if (event.getX() > (width/4*3))
+                    {
+                        if(fileIndex<files.length-1)
+                        {
+                            fileIndex++;
+                            drawImage();
+                        }
+                    }
+                    else if (event.getY() < (height/4))
                     {
                         finish();
                         overridePendingTransition(0, 0);
@@ -57,6 +93,29 @@ public class FastImageActivity extends Activity
         });
 
         setContentView(fastView);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState)
+    {
+        super.onPostCreate(savedInstanceState);
+
+        // Hide UI first
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+            actionBar.hide();
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    }
+
+    private void drawImage()
+    {
+        if(fileIndex<0 || fileIndex>=files.length)
+            return;
+        String path = files[fileIndex];
+        if(zipPath!=null)
+            fastView.drawImageFromZipPath(zipPath, path);
+        else
+            fastView.drawImageFromPath(path);
     }
 
     static {
@@ -80,14 +139,24 @@ class FastImage extends View
     {
         super(context);
         mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        renderPlasma2(mBitmap, path);
+        drawImageFromPath(path);
     }
 
     public FastImage(Context context, int width, int height, String zipPath, String path)
     {
         super(context);
         mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        drawImageFromZipPath(zipPath, path);
+    }
 
+    public void drawImageFromPath(String path)
+    {
+        renderPlasma2(mBitmap, path);
+        invalidate();
+    }
+
+    public void drawImageFromZipPath(String zipPath, String path)
+    {
         // inner path not start with /
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
@@ -95,14 +164,15 @@ class FastImage extends View
 
         MinizipWrapper minizip = new MinizipWrapper();
         int size = minizip.getFileData(zipPath,innerPath,null);
-        Log.d("FASTIMAGE","unzip size : "+size);
+        Log.d("FASTIMAGE", "unzip size : "+size);
         if(dataByte.length<size)
             dataByte = new Byte[size];
 
-        int status = minizip.getFileData(zipPath,innerPath,dataByte);
+        int status = minizip.getFileData(zipPath, innerPath, dataByte);
         Log.d("FASTIMAGE","Get File Status : "+status);
 
         renderPlasma3(mBitmap, dataByte, size);
+        invalidate();
     }
 
     @Override protected void onDraw(Canvas canvas)

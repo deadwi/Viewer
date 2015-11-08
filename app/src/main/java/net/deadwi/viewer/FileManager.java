@@ -35,6 +35,7 @@ public class FileManager
     private boolean isShowHiddenFiles = false;
     private int sortType = SORT_ALPHA;
     private String currentPath;
+    private ArrayList<FileItem> recentFiles;
 
     public FileManager()
     {
@@ -61,6 +62,11 @@ public class FileManager
         sortType = type;
     }
 
+    public ArrayList<FileItem> getRecentFiles()
+    {
+        return recentFiles;
+    }
+
     public ArrayList<FileItem> getCurrentFiles()
     {
         Log.d("FILE", currentPath);
@@ -70,6 +76,7 @@ public class FileManager
         else
             fileList = getFilelist(currentPath, isShowHiddenFiles);
         sortFilelist(fileList,sortType);
+        recentFiles = fileList;
         return fileList;
     }
 

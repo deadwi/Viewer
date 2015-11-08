@@ -22,6 +22,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.content.Intent;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -184,13 +185,22 @@ public class FullscreenActivity extends AppCompatActivity
                 else if(fileManager.isImageFile(name))
                 {
                     Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
-                    String fullPath = msg.getData().getString("path");
-                    if(fullPath.endsWith("/")==false)
-                        fullPath += "/";
-                    fullPath += msg.getData().getString("name");
+                    String fullPath = FileItem.getFullPath(msg.getData().getString("path"),msg.getData().getString("name"));
+                    ArrayList<FileItem> files = fileManager.getRecentFiles();
+                    String[] pathArray = new String[files.size()];
+                    int i =0;
+                    for(FileItem item : files)
+                    {
+                        pathArray[i] = item.getFullPath();
+                        if(item.type == FileItem.TYPE_DIR || item.type == FileItem.TYPE_DIR_IN_ZIP)
+                            pathArray[i] += "/";
+                        i++;
+                    }
 
                     myIntent.putExtra("path", fullPath);
                     myIntent.putExtra("zipPath", msg.getData().getString("zipPath"));
+                    myIntent.putExtra("files", pathArray);
+
                     startActivity(myIntent);
                     overridePendingTransition(0, 0);
                 }

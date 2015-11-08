@@ -51,6 +51,20 @@ public class FileItem
         size=_size;
     }
 
+    public String getFullPath()
+    {
+        return getFullPath(path,name);
+    }
+
+    public static String getFullPath(String path, String name)
+    {
+        String fullPath = path;
+        if(fullPath.endsWith("/")==false)
+            fullPath += "/";
+        fullPath += name;
+        return fullPath;
+    }
+
     private static int compareDir(FileItem lhs, FileItem rhs)
     {
         if(lhs.type==rhs.type)
