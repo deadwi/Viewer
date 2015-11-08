@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "../StringConverter_For_JNI.h"
+
 #define MKDIR(d) mkdir(d, 0775)
 
 #define  LOG_TAG    "libminizip"
@@ -249,10 +251,13 @@ JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZ
         if (ret != UNZ_OK)
             return NULL;
 
-        jstring jfilename = env->NewStringUTF((const char*) &filename_in_zip);
+        jstring jfilename = javaNewStringCharEucKR(env, filename_in_zip);
         jobject jitem = env->NewObject(classFileItem, env->GetMethodID(classFileItem, "<init>", "(Ljava/lang/String;Ljava/lang/String;J)V"),
                                        zipfileStr,jfilename,file_info.uncompressed_size);
         env->CallBooleanMethod(listObj, env->GetMethodID(classArrayList, "add", "(Ljava/lang/Object;)Z"), jitem);
+        env->DeleteLocalRef(jfilename);
+        env->DeleteLocalRef(jitem);
+
         LOGI("file : %s, size : %d", filename_in_zip, file_info.uncompressed_size);
 
         ret = unzGoToNextFile(uf);
@@ -267,7 +272,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_getFileData(JNIEnv
 {
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
-    const char * innerFilename = env->GetStringUTFChars(innerFileStr, &isCopy);
+    char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
 
     LOGI("Open zip : %s target : %s",zipfilename,innerFilename);
 
@@ -338,7 +343,8 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_getFileData(JNIEnv
 
     // Release memory
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);
-    env->ReleaseStringUTFChars(innerFileStr, innerFilename);
+    if(innerFilename)
+        free(innerFilename);
     // update
     if(byteData)
         env->ReleaseByteArrayElements(jout, byteData, 0);

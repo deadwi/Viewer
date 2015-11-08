@@ -88,13 +88,18 @@ class FastImage extends View
         super(context);
         mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
 
+        // inner path not start with /
+        String innerPath = path;
+        if(innerPath.charAt(0)=='/')
+            innerPath = innerPath.substring(1);
+
         MinizipWrapper minizip = new MinizipWrapper();
-        int size = minizip.getFileData(zipPath,path,null);
+        int size = minizip.getFileData(zipPath,innerPath,null);
         Log.d("FASTIMAGE","unzip size : "+size);
         if(dataByte.length<size)
             dataByte = new Byte[size];
 
-        int status = minizip.getFileData(zipPath,path,dataByte);
+        int status = minizip.getFileData(zipPath,innerPath,dataByte);
         Log.d("FASTIMAGE","Get File Status : "+status);
 
         renderPlasma3(mBitmap, dataByte, size);
