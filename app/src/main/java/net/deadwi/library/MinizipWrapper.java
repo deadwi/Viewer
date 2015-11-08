@@ -26,7 +26,7 @@ public class MinizipWrapper {
 
     public native int extractZip(String zipfilename, String dirname, String password);
 
-    public native String getFilenameInZip(String zipfilename);
-
     public native Object getFilenamesInZip(String zipfilename);
+
+    public native int getFileData(String zipfilename, String innerFilename, Byte[] out);
 }

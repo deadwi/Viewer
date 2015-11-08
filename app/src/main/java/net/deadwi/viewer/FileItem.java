@@ -10,8 +10,11 @@ public class FileItem
 {
     public static final int TYPE_DIR=0;
     public static final int TYPE_FILE=1;
+    public static final int TYPE_DIR_IN_ZIP=2;
+    public static final int TYPE_FILE_IN_ZIP=3;
     public String path;
     public String name;
+    public String zipPath;
     public int type;
     public long size;
 
@@ -23,13 +26,36 @@ public class FileItem
         size=_size;
     }
 
+    // for file in zip
+    public FileItem(String _zipPath, String _path, long _size)
+    {
+        type = TYPE_FILE_IN_ZIP;
+        if(_path.charAt(_path.length()-1)=='/')
+        {
+            type = TYPE_DIR_IN_ZIP;
+            _path = _path.substring(0, _path.length()-1);
+        }
+
+        int pos = _path.lastIndexOf("/");
+        if(pos>0)
+        {
+            path = _path.substring(0, pos);
+            name = _path.substring(pos+1);
+        }
+        else
+        {
+            path = "";
+            name = _path;
+        }
+        zipPath = _zipPath;
+        size=_size;
+    }
+
     private static int compareDir(FileItem lhs, FileItem rhs)
     {
-        if(lhs.type==TYPE_DIR && rhs.type!=TYPE_DIR)
-            return -1;
-        else if(lhs.type!=TYPE_DIR && rhs.type==TYPE_DIR)
-            return 1;
-        return 0;
+        if(lhs.type==rhs.type)
+            return 0;
+        return lhs.type<rhs.type ? -1 : 1;
     }
 
     public static final Comparator CompareAlphIgnoreCase = new Comparator<FileItem>()
@@ -56,7 +82,7 @@ public class FileItem
 
             if(lhs.size==rhs.size)
                 return 0;
-            return  lhs.size<rhs.size ? 1 : -1;
+            return  lhs.size<rhs.size ? -1 : 1;
         }
     };
 

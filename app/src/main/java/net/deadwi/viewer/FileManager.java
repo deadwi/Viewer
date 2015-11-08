@@ -169,6 +169,14 @@ public class FileManager
     {
         return path.toLowerCase().endsWith(".zip");
     }
+    static public boolean isImageFile(String path)
+    {
+        String lowerString = path.toLowerCase();
+
+        return lowerString.endsWith(".jpg") ||
+                lowerString.endsWith(".png") ||
+                lowerString.endsWith(".gif");
+    }
 
     static public void extractZipFilesFromDir(String zipName, String toDir, String fromDir)
     {
@@ -184,39 +192,8 @@ public class FileManager
 
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {
-        ArrayList<FileItem> fileList = new ArrayList<FileItem>();
-
         MinizipWrapper minizip = new MinizipWrapper();
-        //String filename = minizip.getFilenameInZip(zipFile);
-        //Log.d("ZIP",filename);
-        ArrayList<String> filenames = (ArrayList<String>)minizip.getFilenamesInZip(zipFile);
-        for (String filename : filenames)
-        {
-            Log.d("ZIP",filename);
-        }
-
-        ZipEntry entry;
-        ZipInputStream zipstream;
-        try {
-            zipstream = new ZipInputStream(new FileInputStream(zipFile));
-            //zipstream.g
-            while((entry = zipstream.getNextEntry()) != null) {
-                String name = new String(entry.getName());
-                fileList.add(new FileItem(
-                        zipFile,
-                        name,
-                        entry.isDirectory() ? FileItem.TYPE_DIR : FileItem.TYPE_FILE,
-                        entry.getSize()
-                ));
-
-                zipstream.closeEntry();
-            }
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        ArrayList<FileItem> fileList = (ArrayList<FileItem>)minizip.getFilenamesInZip(zipFile);
         return fileList;
     }
 

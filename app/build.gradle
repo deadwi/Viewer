@@ -1,5 +1,7 @@
 apply plugin: 'com.android.model.application'
 
+def libsDir = projectDir.path + "/libs/"
+
 model {
     android {
         compileSdkVersion = 23
@@ -22,12 +24,23 @@ model {
 
     android.ndk {
         moduleName = "plasma"
-        ldLibs += ["m","log","jnigraphics","z"]
+        stl = "gnustl_static"
+        ldLibs += ["m","log","jnigraphics","z", libsDir+"armeabi-v7a/libFreeImage.a"]
+        cppFlags += "-fexceptions"
     }
 
     android.buildTypes {
-        release {
+        debug {
+            ndk.cppFlags += "-o2"
+            ndk.CFlags += "-o2"
+
             minifyEnabled = false
+        }
+        release {
+            ndk.cppFlags += "-o2"
+            ndk.CFlags += "-o2"
+
+            minifyEnabled = true
             proguardFiles += file('proguard-rules.txt')
 
             println(proguardFiles)
@@ -37,17 +50,17 @@ model {
         create ("arm7") {
             ndk.abiFilters += "armeabi-v7a"
         }
-        create ("arm8") {
-            ndk.abiFilters += "arm64-v8a"
-        }
-        create ("x86-32") {
-            ndk.abiFilters += "x86"
-        }
+        //create ("arm8") {
+        //    ndk.abiFilters += "arm64-v8a"
+        //}
+        //create ("x86-32") {
+        //    ndk.abiFilters += "x86"
+        //}
         // for detailed abiFilter descriptions, refer to "Supported ABIs" @
         // https://developer.android.com/ndk/guides/abis.html#sa
 
         // build one including all cpu architectures
-        create("all")
+        //create("all")
     }
 }
 

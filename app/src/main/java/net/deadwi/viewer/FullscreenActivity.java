@@ -171,7 +171,8 @@ public class FullscreenActivity extends AppCompatActivity
                 refreshFileList(true);
                 break;
             case EVENT_VIEW_FILE:
-                if(fileManager.isZipFile(msg.getData().getString("name")))
+                String name = msg.getData().getString("name");
+                if(fileManager.isZipFile(name))
                 {
                     String fullPath = msg.getData().getString("path");
                     if(fullPath.endsWith("/")==false)
@@ -180,9 +181,18 @@ public class FullscreenActivity extends AppCompatActivity
                     fileManager.setCurrentDir(fullPath);
                     refreshFileList(true);
                 }
-                else {
+                else if(fileManager.isImageFile(name))
+                {
                     Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
+                    String fullPath = msg.getData().getString("path");
+                    if(fullPath.endsWith("/")==false)
+                        fullPath += "/";
+                    fullPath += msg.getData().getString("name");
+
+                    myIntent.putExtra("path", fullPath);
+                    myIntent.putExtra("zipPath", msg.getData().getString("zipPath"));
                     startActivity(myIntent);
+                    overridePendingTransition(0, 0);
                 }
                 break;
         }

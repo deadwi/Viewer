@@ -90,7 +90,7 @@ public class CustomAdapter extends BaseAdapter
             textHead = holder.textHead;
         }
         text.setText(list.get(position).name);
-        if(list.get(position).type == FileItem.TYPE_DIR)
+        if(list.get(position).type == FileItem.TYPE_DIR || list.get(position).type == FileItem.TYPE_DIR_IN_ZIP)
             textHead.setText("D");
         else
             textHead.setText("F");
@@ -107,14 +107,17 @@ public class CustomAdapter extends BaseAdapter
                     msg.what = FullscreenActivity.EVENT_UPDATE_FILE_LIST;
                     handler.sendMessage(msg);
                 }
+                else if(item.type == FileItem.TYPE_DIR_IN_ZIP)
+                {
+                }
                 else
                 {
-                    Toast.makeText(context, "리스트 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
-
                     Message msg = Message.obtain();
                     Bundle data = new Bundle();
                     data.putString("path", item.path);
                     data.putString("name", item.name);
+                    data.putString("zipPath", item.zipPath);
+
                     msg.setData(data);
                     msg.what = FullscreenActivity.EVENT_VIEW_FILE;
                     handler.sendMessage(msg);
