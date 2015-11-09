@@ -34,77 +34,6 @@ const int ERROR_ZIP_FILE_NOT_FOUND = -104;
 const int ERROR_ZIP_FILE = -105;
 const int ERROR_ZIP_FILE_SIZE_0 = -106;
 
-/*
-void getFileTime(const char *filename, tm_zip *tmzip, uLong *dostime)
-{
-    struct stat s = { 0 };
-    time_t tm_t = 0;
-
-    if (strcmp(filename, "-") != 0) {
-        char name[MAX_FILENAME_LEN + 1];
-
-        int len = strlen(filename);
-        if (len > MAX_FILENAME_LEN) {
-            len = MAX_FILENAME_LEN;
-        }
-
-        strncpy(name, filename, MAX_FILENAME_LEN - 1);
-        name[MAX_FILENAME_LEN] = 0;
-
-        if (name[len - 1] == '/') {
-            name[len - 1] = 0;
-        }
-
-        if (stat(name, &s) == 0) {
-            tm_t = s.st_mtime;
-        }
-    }
-
-    struct tm* filedate = localtime(&tm_t);
-    tmzip->tm_sec  = filedate->tm_sec;
-    tmzip->tm_min  = filedate->tm_min;
-    tmzip->tm_hour = filedate->tm_hour;
-    tmzip->tm_mday = filedate->tm_mday;
-    tmzip->tm_mon  = filedate->tm_mon;
-    tmzip->tm_year = filedate->tm_year;
-}
-*/
-
-void setFileTime(const char *filename, uLong dosdate, tm_unz tmu_date)
-{
-    struct tm newdate;
-    newdate.tm_sec  = tmu_date.tm_sec;
-    newdate.tm_min  = tmu_date.tm_min;
-    newdate.tm_hour = tmu_date.tm_hour;
-    newdate.tm_mday = tmu_date.tm_mday;
-    newdate.tm_mon  = tmu_date.tm_mon;
-
-    if (tmu_date.tm_year > 1900) {
-        newdate.tm_year = tmu_date.tm_year - 1900;
-    } else {
-        newdate.tm_year = tmu_date.tm_year;
-    }
-    newdate.tm_isdst = -1;
-
-    struct utimbuf ut;
-    ut.actime = ut.modtime = mktime(&newdate);
-    utime(filename, &ut);
-}
-
-/*
-int isLargeFile(const char* filename)
-{
-    FILE* pFile = fopen64(filename, "rb");
-    if (pFile == NULL) return 0;
-
-    fseeko64(pFile, 0, SEEK_END);
-    ZPOS64_T pos = ftello64(pFile);
-    fclose(pFile);
-
-    return (pos >= 0xffffffff);
-}
-*/
-
 // Calculate the CRC32 of a file
 int getCRC32(const char* filenameinzip, Bytef *buf, unsigned long size_buf, unsigned long* result_crc)
 {
@@ -137,88 +66,67 @@ int getCRC32(const char* filenameinzip, Bytef *buf, unsigned long size_buf, unsi
     return status;
 }
 
-int extractCurrentFile(unzFile uf, const char *password)
+int getFileData(const char* zipFilename, const char* innerFilename, jbyte* byteData, jsize byteDataSize)
 {
+    LOGI("Open zip : %s target : %s",zipFilename,innerFilename);
+
+    unzFile uf = unzOpen64(zipFilename);
+    if (uf == NULL)
+        return ERROR_FILE_NOT_FOUND;
+
+    int ret;
+    ret = unzGoToFirstFile(uf);
+    if(ret != UNZ_OK)
+        return ERROR_ZIP_FILE_NOT_FOUND;
+
+    int status=0;
     unz_file_info64 file_info = { 0 };
-    char filename_inzip[MAX_FILENAME_LEN] = { 0 };
+    char filename_in_zip[MAX_FILENAME_LEN] = { 0 };
+    while(true)
+    {
+        ret = unzGetCurrentFileInfo64(uf, &file_info, filename_in_zip, sizeof(filename_in_zip), NULL, 0, NULL, 0);
+        if (ret != UNZ_OK)
+        {
+            status = ERROR_ZIP_FILE;
+            break;
+        }
+        if(strcmp(innerFilename,filename_in_zip)!=0)
+        {
+            ret = unzGoToNextFile(uf);
+            if (ret != UNZ_OK)
+                break;
+            continue;
+        }
 
-    int status = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
-    if (status != UNZ_OK) {
-    	return status;
-    }
-
-    uInt size_buf = WRITE_BUFFER_SIZE;
-    void* buf = (void*) malloc(size_buf);
-    if (buf == NULL) return UNZ_INTERNALERROR;
-
-    status = unzOpenCurrentFilePassword(uf, password);
-    const char* write_filename = filename_inzip;
-
-    // Create the file on disk so we can unzip to it
-    FILE* fout = NULL;
-    if (status == UNZ_OK) {
-        fout = fopen64(write_filename, "wb");
-    }
-
-    // Read from the zip, unzip to buffer, and write to disk
-    if (fout != NULL) {
-        do {
-            status = unzReadCurrentFile(uf, buf, size_buf);
-            if (status <= 0) break;
-            if (fwrite(buf, status, 1, fout) != 1) {
-                status = UNZ_ERRNO;
+        if(file_info.uncompressed_size>0)
+        {
+            if(file_info.uncompressed_size>byteDataSize)
+            {
+                status = file_info.uncompressed_size;
                 break;
             }
-        } while (status > 0);
+            ret = unzOpenCurrentFile(uf);
+            if (ret != UNZ_OK)
+            {
+                status = ERROR_ZIP_FILE;
+                break;
+            }
 
-        if (fout) fclose(fout);
-
-        // Set the time of the file that has been unzipped
-        if (status == 0) {
-        	setFileTime(write_filename, file_info.dosDate, file_info.tmu_date);
+            LOGI("Get data : %s",filename_in_zip);
+            int readSize = 0;
+            while(true)
+            {
+                readSize = unzReadCurrentFile(uf, (void*) byteData, byteDataSize);
+                LOGI("Read %d byte",readSize);
+                if(readSize<=0)
+                    break;
+            }
         }
+        else
+            status = ERROR_ZIP_FILE_SIZE_0;
+        break;
     }
-
-    unzCloseCurrentFile(uf);
-
-    free(buf);
-    return status;
-}
-
-JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_extractZip(JNIEnv * env, jobject, jstring zipfileStr, jstring dirnameStr, jstring passwordStr)
-{
-    jboolean isCopy;
-    const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
-    const char * dirname = env->GetStringUTFChars(dirnameStr, &isCopy);
-    const char * password = env->GetStringUTFChars(passwordStr, &isCopy);
-
-    int status = 0;
-
-    unzFile uf = NULL;
-
-    // Open zip file
-    if (zipfilename != NULL) {
-        uf = unzOpen64(zipfilename);
-    }
-    if (uf == NULL) {
-    	return ERROR_ZIP_FILE_NOT_FOUND;
-    }
-
-    // Extract all
-    status = unzGoToFirstFile(uf);
-    if (status != UNZ_OK) {
-    	return ERROR_ZIP_FILE;
-    }
-
-    chdir(dirname);
-    status = extractCurrentFile(uf, password);
-
-    // Release memory
-    env->ReleaseStringUTFChars(zipfileStr, zipfilename);
-    env->ReleaseStringUTFChars(dirnameStr, dirname);
-    env->ReleaseStringUTFChars(passwordStr, password);
-
-    return status;
+    return  status;
 }
 
 JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZip(JNIEnv * env, jobject, jstring zipfileStr)
@@ -273,18 +181,6 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_getFileData(JNIEnv
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
-
-    LOGI("Open zip : %s target : %s",zipfilename,innerFilename);
-
-    unzFile uf = unzOpen64(zipfilename);
-    if (uf == NULL)
-        return ERROR_FILE_NOT_FOUND;
-
-    int ret;
-    ret = unzGoToFirstFile(uf);
-    if(ret != UNZ_OK)
-        return ERROR_ZIP_FILE_NOT_FOUND;
-
     jbyte* byteData = NULL;
     jsize outSize = 0;
     if(jout)
@@ -293,53 +189,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_getFileData(JNIEnv
         outSize = env->GetArrayLength(jout);
     }
 
-    int status=0;
-    unz_file_info64 file_info = { 0 };
-    char filename_in_zip[MAX_FILENAME_LEN] = { 0 };
-    while(true)
-    {
-        ret = unzGetCurrentFileInfo64(uf, &file_info, filename_in_zip, sizeof(filename_in_zip), NULL, 0, NULL, 0);
-        if (ret != UNZ_OK)
-        {
-            status = ERROR_ZIP_FILE;
-            break;
-        }
-        if(strcmp(innerFilename,filename_in_zip)!=0)
-        {
-            ret = unzGoToNextFile(uf);
-            if (ret != UNZ_OK)
-                break;
-            continue;
-        }
-
-        if(file_info.uncompressed_size>0)
-        {
-            if(file_info.uncompressed_size>outSize)
-            {
-                status = file_info.uncompressed_size;
-                break;
-            }
-            ret = unzOpenCurrentFile(uf);
-            if (ret != UNZ_OK)
-            {
-                status = ERROR_ZIP_FILE;
-                break;
-            }
-
-            LOGI("Get data : %s",filename_in_zip);
-            int readSize = 0;
-            while(true)
-            {
-                readSize = unzReadCurrentFile(uf, (void*) byteData, outSize);
-                LOGI("Read %d byte",readSize);
-                if(readSize<=0)
-                    break;
-            }
-        }
-        else
-            status = ERROR_ZIP_FILE_SIZE_0;
-        break;
-    }
+    int status = getFileData(zipfilename, innerFilename, byteData, outSize);
 
     // Release memory
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);

@@ -199,8 +199,7 @@ public class FileManager
 
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {
-        MinizipWrapper minizip = new MinizipWrapper();
-        ArrayList<FileItem> fileList = (ArrayList<FileItem>)minizip.getFilenamesInZip(zipFile);
+        ArrayList<FileItem> fileList = (ArrayList<FileItem>)MinizipWrapper.getFilenamesInZip(zipFile);
         return fileList;
     }
 

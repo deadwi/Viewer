@@ -1,6 +1,7 @@
 package net.deadwi.library;
 
-public class MinizipWrapper {
+public class MinizipWrapper
+{
     static {
         System.loadLibrary("plasma");
     }
@@ -24,9 +25,9 @@ public class MinizipWrapper {
     }
     */
 
-    public native int extractZip(String zipfilename, String dirname, String password);
+    static public native int extractZip(String zipfilename, String dirname, String password);
 
-    public native Object getFilenamesInZip(String zipfilename);
+    static public native Object getFilenamesInZip(String zipfilename);
 
-    public native int getFileData(String zipfilename, String innerFilename, Byte[] out);
+    static public native int getFileData(String zipfilename, String innerFilename, Byte[] out);
 }

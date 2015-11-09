@@ -16,6 +16,7 @@ import android.graphics.Canvas;
 import android.view.Display;
 import android.view.WindowManager;
 
+import net.deadwi.library.FreeImageWrapper;
 import net.deadwi.library.MinizipWrapper;
 
 public class FastImageActivity extends AppCompatActivity
@@ -31,6 +32,7 @@ public class FastImageActivity extends AppCompatActivity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        FreeImageWrapper.init();
         width = getWindowManager().getDefaultDisplay().getWidth();
         height = getWindowManager().getDefaultDisplay().getHeight();
 
@@ -117,41 +119,32 @@ public class FastImageActivity extends AppCompatActivity
         else
             fastView.drawImageFromPath(path);
     }
-
-    static {
-        System.loadLibrary("plasma");
-    }
 }
 
 @SuppressLint("ViewConstructor")
 class FastImage extends View
 {
-    private Bitmap mBitmap;
-    Byte[] dataByte = new Byte[1024*512];
-
-    // implementend by libplasma.so
-    private static native void renderPlasma(Bitmap  bitmap, long time_ms);
-    private static native void renderPlasma2(Bitmap  bitmap, String path);
-    private static native void renderPlasma3(Bitmap  bitmap, Byte[] data, int dataSize);
-    private static native void loadImage(String path);
+    static private Bitmap mBitmap;
 
     public FastImage(Context context, int width, int height, String path)
     {
         super(context);
-        mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        if(mBitmap==null)
+            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         drawImageFromPath(path);
     }
 
     public FastImage(Context context, int width, int height, String zipPath, String path)
     {
         super(context);
-        mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        if(mBitmap==null)
+            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         drawImageFromZipPath(zipPath, path);
     }
 
     public void drawImageFromPath(String path)
     {
-        renderPlasma2(mBitmap, path);
+        FreeImageWrapper.loadImageFromPath(mBitmap, path);
         invalidate();
     }
 
@@ -162,16 +155,7 @@ class FastImage extends View
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
 
-        MinizipWrapper minizip = new MinizipWrapper();
-        int size = minizip.getFileData(zipPath,innerPath,null);
-        Log.d("FASTIMAGE", "unzip size : "+size);
-        if(dataByte.length<size)
-            dataByte = new Byte[size];
-
-        int status = minizip.getFileData(zipPath, innerPath, dataByte);
-        Log.d("FASTIMAGE","Get File Status : "+status);
-
-        renderPlasma3(mBitmap, dataByte, size);
+        FreeImageWrapper.loadImageFromZip(mBitmap, zipPath, innerPath);
         invalidate();
     }
 

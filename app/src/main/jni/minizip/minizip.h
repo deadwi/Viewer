@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_net_deadwi_library_MinizipWrapper_extractZip(JNIEnv *, jobject, jstring, jstring, jstring);
+int getFileData(const char* zipFilename, const char* innerFilename, jbyte* byteData, jsize byteDataSize);
 
 JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZip(JNIEnv *, jobject, jstring);
 

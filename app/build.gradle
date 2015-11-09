@@ -27,18 +27,17 @@ model {
         stl = "gnustl_static"
         ldLibs += ["m","log","jnigraphics","z", libsDir+"armeabi-v7a/libFreeImage.a"]
         cppFlags += "-fexceptions"
+        cppFlags += "-O2"
+        CFlags += "-O2"
     }
 
     android.buildTypes {
         debug {
-            ndk.cppFlags += "-o2"
-            ndk.CFlags += "-o2"
-
             minifyEnabled = false
         }
         release {
-            ndk.cppFlags += "-o2"
-            ndk.CFlags += "-o2"
+            //ndk.cppFlags += "-o2"
+            //ndk.CFlags += "-o2"
 
             minifyEnabled = true
             proguardFiles += file('proguard-rules.txt')

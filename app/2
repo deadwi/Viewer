@@ -1,5 +1,5 @@
-# 1 "C:\\Users\\Administrator\\AppData\\Local\\Temp\\gcc-body0"
-# 1 "D:\\data\\android\\Viewer\\app//"
+# 1 "C:\\Users\\jihun.jo\\AppData\\Local\\Temp\\gcc-body0"
+# 1 "D:\\project\\android\\Viewer\\app//"
 # 1 "<built-in>"
 #define __STDC__ 1
 #define __cplusplus 199711L
@@ -376,5 +376,5 @@
 #define _GNU_SOURCE 1
 #define NDEBUG 1
 #define ___CIDR_IGNORE_DEFINITIONS_START 1
-# 1 "C:\\Users\\Administrator\\AppData\\Local\\Temp\\gcc-body0"
+# 1 "C:\\Users\\jihun.jo\\AppData\\Local\\Temp\\gcc-body0"
 #define ___CIDR_IGNORE_DEFINITIONS_END 
