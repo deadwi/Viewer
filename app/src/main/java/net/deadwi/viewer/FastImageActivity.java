@@ -115,7 +115,7 @@ public class FastImageActivity extends AppCompatActivity
             return;
         String path = files[fileIndex];
         if(zipPath!=null)
-            fastView.drawImageFromZipPath(zipPath, path);
+            fastView.drawImageFromZipPath(zipPath, path, (fileIndex+1<files.length ? files[fileIndex+1] : null));
         else
             fastView.drawImageFromPath(path);
     }
@@ -125,12 +125,18 @@ public class FastImageActivity extends AppCompatActivity
 class FastImage extends View
 {
     static private Bitmap mBitmap;
+    static private Bitmap mBitmap2;
+    private String prepareZipPath;
+    private String prepareInnerPath;
 
     public FastImage(Context context, int width, int height, String path)
     {
         super(context);
         if(mBitmap==null)
+        {
             mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+            mBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        }
         drawImageFromPath(path);
     }
 
@@ -138,8 +144,11 @@ class FastImage extends View
     {
         super(context);
         if(mBitmap==null)
+        {
             mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        drawImageFromZipPath(zipPath, path);
+            mBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        }
+        drawImageFromZipPath(zipPath, path, null);
     }
 
     public void drawImageFromPath(String path)
@@ -148,12 +157,18 @@ class FastImage extends View
         invalidate();
     }
 
-    public void drawImageFromZipPath(String zipPath, String path)
+    public void drawImageFromZipPath(String zipPath, String path, String nextPath)
     {
         // inner path not start with /
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
+
+        if(nextPath!=null)
+        {
+            prepareZipPath = zipPath;
+            prepareInnerPath = nextPath;
+        }
 
         FreeImageWrapper.loadImageFromZip(mBitmap, zipPath, innerPath);
         invalidate();
