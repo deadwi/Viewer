@@ -53,39 +53,24 @@ public class FastImageActivity extends AppCompatActivity
             }
         }
 
-        if(zipPath!=null)
-        {
-            Log.d("FASTIMAGE", "zip path : " + zipPath);
-            fastView = new FastImage(this, width, height, zipPath, path);
-        }
-        else
-            fastView = new FastImage(this, width, height, path);
+        fastView = new FastImage(this, width, height);
         fastView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event)
-            {
-                if (event.getAction() == MotionEvent.ACTION_DOWN)
-                {
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
-                    if (event.getX() < (width/4))
-                    {
-                        if(fileIndex>0)
-                        {
+                    if (event.getX() < (width / 4)) {
+                        if (fileIndex > 0) {
                             fileIndex--;
                             drawImage();
                         }
-                    }
-                    else if (event.getX() > (width/4*3))
-                    {
-                        if(fileIndex<files.length-1)
-                        {
+                    } else if (event.getX() > (width / 4 * 3)) {
+                        if (fileIndex < files.length - 1) {
                             fileIndex++;
                             drawImage();
                         }
-                    }
-                    else if (event.getY() < (height/4))
-                    {
+                    } else if (event.getY() < (height / 4)) {
                         finish();
                         overridePendingTransition(0, 0);
                     }
@@ -95,6 +80,15 @@ public class FastImageActivity extends AppCompatActivity
         });
 
         setContentView(fastView);
+        fastView.startBackgroundLoader();
+        drawImage();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        fastView.stopBackgroundLoader();
     }
 
     @Override
@@ -122,61 +116,207 @@ public class FastImageActivity extends AppCompatActivity
 }
 
 @SuppressLint("ViewConstructor")
-class FastImage extends View
+class FastImage extends View implements Runnable
 {
-    static private Bitmap mBitmap;
+    static private boolean isBitmap1Out = true;
+    static private Object lock = new Object();
+    static private Bitmap mBitmap1;
     static private Bitmap mBitmap2;
-    private String prepareZipPath;
-    private String prepareInnerPath;
 
-    public FastImage(Context context, int width, int height, String path)
+    private boolean isThreadRun = false;
+    private Thread loaderThread;
+
+    private boolean currentDraw = false;
+    private boolean currentComplete = false;
+    private String currentPath;
+    private String currentZipPath;
+    private boolean prepareComplete = false;
+    private String preparePath;
+    private String prepareZipPath;
+
+    public void startBackgroundLoader()
     {
-        super(context);
-        if(mBitmap==null)
-        {
-            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-            mBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        }
-        drawImageFromPath(path);
+        isThreadRun = true;
+        loaderThread = new Thread(this);
+        loaderThread.start();
     }
 
-    public FastImage(Context context, int width, int height, String zipPath, String path)
+    public void stopBackgroundLoader()
+    {
+        isThreadRun = false;
+        synchronized(lock)
+        {
+            lock.notify();
+        }
+    }
+
+    @Override
+    public void run()
+    {
+        while(isThreadRun)
+        {
+            try {
+                Thread.sleep(200, 0);
+            }
+            catch (InterruptedException e)
+            {
+            }
+
+            synchronized(lock)
+            {
+                Log.d("FASTIMAGE2", "Loop");
+                lock.notify();
+                try
+                {
+                    if(currentComplete==true && prepareComplete==true)
+                        lock.wait();
+                }
+                catch (InterruptedException e)
+                {
+                }
+
+                if(currentComplete==false)
+                {
+                    if(currentPath!=null)
+                    {
+                        if (currentZipPath == null)
+                            drawImageFromPathToBitmap(currentPath, getOutBitmap());
+                        else
+                            drawImageFromZipPathToBitmap(currentZipPath, currentPath, getOutBitmap());
+                        Log.d("FASTIMAGE2", "Current loaded");
+                    }
+                    currentComplete = true;
+                    postInvalidate();
+                }
+                if(prepareComplete==false && currentDraw==true)
+                {
+                    if(preparePath!=null)
+                    {
+                        if(prepareZipPath==null)
+                            drawImageFromPathToBitmap(preparePath, getSubBitmap());
+                        else
+                            drawImageFromZipPathToBitmap(prepareZipPath, preparePath, getSubBitmap());
+                        Log.d("FASTIMAGE2", "Prepare loaded");
+                    }
+                    prepareComplete = true;
+                }
+            }
+        }
+    }
+
+    public FastImage(Context context, int width, int height)
     {
         super(context);
-        if(mBitmap==null)
+        if(mBitmap1==null)
         {
-            mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+            mBitmap1 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
             mBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         }
-        drawImageFromZipPath(zipPath, path, null);
     }
 
     public void drawImageFromPath(String path)
     {
-        FreeImageWrapper.loadImageFromPath(mBitmap, path);
-        invalidate();
+        synchronized(lock)
+        {
+            currentComplete = false;
+            currentPath = path;
+            currentZipPath = null;
+            lock.notify();
+        }
     }
 
     public void drawImageFromZipPath(String zipPath, String path, String nextPath)
+    {
+        synchronized(lock)
+        {
+            boolean tcurrentComplete = currentComplete;
+            String tcurrentPath = currentPath;
+            String tcurrentZipPath = currentZipPath;
+
+            currentDraw = false;
+            // next page is ready
+            if(prepareComplete==true && preparePath!=null && preparePath.compareTo(path)==0)
+            {
+                currentComplete = true;
+                currentPath = path;
+                currentZipPath = zipPath;
+                isBitmap1Out = !isBitmap1Out;
+                invalidate();
+            }
+            else
+            {
+                currentComplete = false;
+                currentPath = path;
+                currentZipPath = zipPath;
+            }
+
+            prepareComplete = false;
+            if(nextPath!=null)
+            {
+                // next page is ready
+                if(tcurrentComplete==true && nextPath!=null && nextPath.compareTo(tcurrentPath)==0)
+                {
+                    prepareComplete = true;
+                    isBitmap1Out = !isBitmap1Out;
+                }
+                preparePath = nextPath;
+                prepareZipPath = zipPath;
+            }
+            else
+            {
+                preparePath = null;
+                prepareZipPath = null;
+            }
+            lock.notify();
+        }
+    }
+
+    private void drawImageFromPathToBitmap(String path, Bitmap bitmap)
+    {
+        FreeImageWrapper.loadImageFromPath(bitmap, path);
+    }
+
+    private void drawImageFromZipPathToBitmap(String zipPath, String path, Bitmap bitmap)
     {
         // inner path not start with /
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
+        FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath);
+    }
 
-        if(nextPath!=null)
-        {
-            prepareZipPath = zipPath;
-            prepareInnerPath = nextPath;
-        }
+    private Bitmap getOutBitmap()
+    {
+        return isBitmap1Out==true ? mBitmap1 : mBitmap2;
+    }
 
-        FreeImageWrapper.loadImageFromZip(mBitmap, zipPath, innerPath);
-        invalidate();
+    private Bitmap getSubBitmap()
+    {
+        return isBitmap1Out==true ? mBitmap2 : mBitmap1;
     }
 
     @Override protected void onDraw(Canvas canvas)
     {
-        Log.d("FASTIMAGE", "DRAW");
-        canvas.drawBitmap(mBitmap, 0, 0, null);
+        if(Thread.holdsLock(lock)==true)
+        {
+            Log.d("FASTIMAGE", "onDraw skip");
+            return;
+        }
+        Log.d("FASTIMAGE", "onDraw Start");
+        synchronized(lock)
+        {
+            if(currentComplete==true)
+            {
+                currentDraw = true;
+                canvas.drawBitmap(getOutBitmap(), 0, 0, null);
+                Log.d("FASTIMAGE", "onDraw OK");
+            }
+            else
+            {
+                //lock.notify();
+                //invalidate();
+            }
+        }
+        Log.d("FASTIMAGE", "onDraw End");
     }
 }
