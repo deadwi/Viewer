@@ -64,33 +64,136 @@ void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
     LOGE(out.c_str());
 }
 
-static uint16_t  make565(int red, int green, int blue)
+// Return current time in milliseconds
+static double now_ms()
 {
-    return (uint16_t)( ((red   << 8) & 0xf800) |
-                       ((green << 2) & 0x03e0) |
-                       ((blue  >> 3) & 0x001f) );
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec*1000. + tv.tv_usec/1000.;
+}
+
+static uint16_t make565(uint8_t red, uint8_t green, uint8_t blue)
+{
+    return ((red>>3)<<11) | ((green>>2)<<5) | (blue>>3);
 }
 
 static void copy_pixels( AndroidBitmapInfo*  info, void*  from, void* to)
 {
     memcpy(to,from,info->height*info->stride);
-    /*
-    int  yy;
-    for (yy = 0; yy < info->height; yy++)
-    {
-        uint16_t* lineFrom = (uint16_t*)from;
-        uint16_t* lineTo = (uint16_t*)to;
+}
 
-        int xx;
-        for (xx = 0; xx < info->width; xx++)
-        {
-            lineTo[xx] = lineFrom[xx];
-        }
-        // go to next line
-        from = (char*)from + info->stride;
-        to = (char*)to + info->stride;
+static void fill_pixels( AndroidBitmapInfo*  info, void* to, uint16_t color, int x=0, int y=0, int width=0, int height=0)
+{
+    if(width==0)
+        width = info->width;
+    if(height==0)
+        height = info->height;
+
+    if(x<0 || y<0 || x+width>info->width || y+height>info->height)
+    {
+        LOGE("fill_pixels : Over the range.");
+        return;
     }
-     */
+
+    char* toRow = (char*)to + (info->stride*(height+y-1));
+    for (int yy = 0; yy < height; yy++)
+    {
+        uint16_t* line = (uint16_t*)toRow+x;
+        for (int xx = 0; xx < width; xx++)
+            line[xx]=color;
+        toRow = toRow - info->stride;
+    }
+}
+
+static void copy_pixels_flip_vertical( AndroidBitmapInfo*  info, void*  from, void* to, int x=0, int y=0, int fromWidth=0, int fromHeight=0)
+{
+    if(fromWidth==0)
+        fromWidth = info->width;
+    if(fromHeight==0)
+        fromHeight = info->height;
+
+    if(x<0 || y<0 || x+fromWidth>info->width || y+fromHeight>info->height)
+    {
+        LOGE("copy_pixels_flip_vertical : Over the range.");
+        return;
+    }
+
+    int fromStride = sizeof(uint16_t)*fromWidth;
+    char* fromRow = (char*)from;
+    char* toRow = (char*)to + (info->stride*(fromHeight+y-1));
+
+    for (int yy = 0; yy < fromHeight; yy++)
+    {
+        memcpy((uint16_t*)toRow+x,fromRow,fromStride);
+        fromRow = fromRow + fromStride;
+        toRow = toRow - info->stride;
+    }
+}
+
+static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
+{
+    AndroidBitmapInfo info;
+    void* pixels;
+    int ret;
+    double starttime = now_ms();
+
+    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
+    {
+        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        return;
+    }
+    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
+    {
+        LOGE("Bitmap format is not RGB_565 !");
+        return;
+    }
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
+    {
+        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        return;
+    }
+
+    unsigned int originWidth = FreeImage_GetWidth(dib);
+    unsigned int originHeight = FreeImage_GetHeight(dib);
+    double originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
+    double displayRate = static_cast<double>(info.width)/static_cast<double>(info.height);
+
+    unsigned int resizeWidth = 0;
+    unsigned int resizeHeight = 0;
+    unsigned int displayX = 0;
+    unsigned int displayY = 0;
+    if(displayRate > originRate)
+    {
+        // originWidth : originHeight = width : info.height
+        // width = originWidth * info.height / originHeight
+        resizeWidth = info.height * originRate;
+        resizeHeight = info.height;
+        displayX = (info.width-resizeWidth)/2;
+        displayY = 0;
+    }
+    else
+    {
+        // originWidth : originHeight = info.width : height
+        // height = originHeight * info.width / originWidth
+        resizeWidth = info.width;
+        resizeHeight =  info.width / originRate;
+        displayX = 0;
+        displayY = (info.height-resizeHeight)/2;
+    }
+
+    FIBITMAP *rescaled = FreeImage_Rescale(dib, resizeWidth, resizeHeight, FILTER_BILINEAR);
+    FreeImage_Unload(dib);
+
+    FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
+    FreeImage_Unload(rescaled);
+
+    fill_pixels(&info, pixels, make565(255,255,255));
+    copy_pixels_flip_vertical(&info, FreeImage_GetBits(dib565), pixels, displayX, displayY, resizeWidth, resizeHeight);
+
+    FreeImage_Unload(dib565);
+    AndroidBitmap_unlockPixels(env, bitmap);
+
+    LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
 
@@ -111,26 +214,6 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_deInitFreeImage(
 
 JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path)
 {
-    AndroidBitmapInfo info;
-    void* pixels;
-    int ret;
-
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
-    {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-        return;
-    }
-    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
-    {
-        LOGE("Bitmap format is not RGB_565 !");
-        return;
-    }
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
-    {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-        return;
-    }
-
     jboolean isCopy;
     const char * imgPath = env->GetStringUTFChars(path, &isCopy);
     if(imgPath==NULL)
@@ -140,44 +223,14 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
     if(dib)
     {
         LOGI("Load OK");
-        FIBITMAP *rescaled = FreeImage_Rescale(dib, info.width, info.height);
-        FreeImage_Unload(dib);
-
-        FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
-        FreeImage_Unload(rescaled);
-
-        FreeImage_FlipVertical(dib565);
-        copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
-
-        FreeImage_Unload(dib565);
+        image_out(env,bitmap,dib);
     }
 
-    AndroidBitmap_unlockPixels(env, bitmap);
     env->ReleaseStringUTFChars(path, imgPath);
 }
 
 JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMemory(JNIEnv *env, jobject obj,jobject bitmap,jbyteArray data,jint dataSize)
 {
-    AndroidBitmapInfo info;
-    void* pixels;
-    int ret;
-
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
-    {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-        return;
-    }
-    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
-    {
-        LOGE("Bitmap format is not RGB_565 !");
-        return;
-    }
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
-    {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-        return;
-    }
-
     jboolean isCopy;
     BYTE* byteData = (BYTE*)env->GetByteArrayElements(data, &isCopy);
     jsize byteDataSize = env->GetArrayLength(data);
@@ -190,45 +243,15 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMem
     if(dib)
     {
         LOGI("Load OK");
-        FIBITMAP *rescaled = FreeImage_Rescale(dib, info.width, info.height);
-        FreeImage_Unload(dib);
-
-        FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
-        FreeImage_Unload(rescaled);
-
-        FreeImage_FlipVertical(dib565);
-        copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
-
-        FreeImage_Unload(dib565);
+        image_out(env,bitmap,dib);
     }
 
-    AndroidBitmap_unlockPixels(env, bitmap);
     // not update
     env->ReleaseByteArrayElements(data, (jbyte*)byteData, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr)
 {
-    AndroidBitmapInfo info;
-    void* pixels;
-    int ret;
-
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
-    {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-        return;
-    }
-    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
-    {
-        LOGE("Bitmap format is not RGB_565 !");
-        return;
-    }
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
-    {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-        return;
-    }
-
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
@@ -251,21 +274,10 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
             if(dib)
             {
                 LOGI("Load OK");
-                FIBITMAP *rescaled = FreeImage_Rescale(dib, info.width, info.height);
-                FreeImage_Unload(dib);
-
-                FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
-                FreeImage_Unload(rescaled);
-
-                FreeImage_FlipVertical(dib565);
-                copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
-
-                FreeImage_Unload(dib565);
+                image_out(env,bitmap,dib);
             }
         }
     }
-
-    AndroidBitmap_unlockPixels(env, bitmap);
 
     // Release memory
     if(byteData)
