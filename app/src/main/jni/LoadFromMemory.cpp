@@ -105,7 +105,7 @@ static void fill_pixels( AndroidBitmapInfo*  info, void* to, uint16_t color, int
     }
 }
 
-static void copy_pixels_flip_vertical( AndroidBitmapInfo*  info, void*  from, void* to, int x=0, int y=0, int fromWidth=0, int fromHeight=0)
+static void copy_pixels_flip_vertical(void* to, AndroidBitmapInfo*  info, void*  from, int fromStride, int x=0, int y=0, int fromWidth=0, int fromHeight=0)
 {
     if(fromWidth==0)
         fromWidth = info->width;
@@ -118,7 +118,6 @@ static void copy_pixels_flip_vertical( AndroidBitmapInfo*  info, void*  from, vo
         return;
     }
 
-    int fromStride = sizeof(uint16_t)*fromWidth;
     char* fromRow = (char*)from;
     char* toRow = (char*)to + (info->stride*(fromHeight+y-1));
 
@@ -187,8 +186,9 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
     FreeImage_Unload(rescaled);
 
+    FreeImage_GetPitch(dib565);
     fill_pixels(&info, pixels, make565(255,255,255));
-    copy_pixels_flip_vertical(&info, FreeImage_GetBits(dib565), pixels, displayX, displayY, resizeWidth, resizeHeight);
+    copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);
 
     FreeImage_Unload(dib565);
     AndroidBitmap_unlockPixels(env, bitmap);

@@ -166,7 +166,7 @@ JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZ
         env->DeleteLocalRef(jfilename);
         env->DeleteLocalRef(jitem);
 
-        LOGI("file : %s, size : %d", filename_in_zip, file_info.uncompressed_size);
+        //LOGI("file : %s, size : %d", filename_in_zip, file_info.uncompressed_size);
 
         ret = unzGoToNextFile(uf);
         if (ret != UNZ_OK)

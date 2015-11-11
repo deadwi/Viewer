@@ -155,20 +155,13 @@ class FastImage extends View implements Runnable
     {
         while(isThreadRun)
         {
-            try {
-                Thread.sleep(200, 0);
-            }
-            catch (InterruptedException e)
-            {
-            }
-
             synchronized(lock)
             {
                 Log.d("FASTIMAGE2", "Loop");
                 lock.notify();
                 try
                 {
-                    if(currentComplete==true && prepareComplete==true)
+                    if(currentComplete==false || currentDraw==false || prepareComplete==true)
                         lock.wait();
                 }
                 catch (InterruptedException e)
@@ -179,6 +172,7 @@ class FastImage extends View implements Runnable
                 {
                     if(currentPath!=null)
                     {
+                        Log.d("FASTIMAGE2", "Current loading");
                         if (currentZipPath == null)
                             drawImageFromPathToBitmap(currentPath, getOutBitmap());
                         else
@@ -192,6 +186,7 @@ class FastImage extends View implements Runnable
                 {
                     if(preparePath!=null)
                     {
+                        Log.d("FASTIMAGE2", "Prepare loading");
                         if(prepareZipPath==null)
                             drawImageFromPathToBitmap(preparePath, getSubBitmap());
                         else
@@ -297,11 +292,6 @@ class FastImage extends View implements Runnable
 
     @Override protected void onDraw(Canvas canvas)
     {
-        if(Thread.holdsLock(lock)==true)
-        {
-            Log.d("FASTIMAGE", "onDraw skip");
-            return;
-        }
         Log.d("FASTIMAGE", "onDraw Start");
         synchronized(lock)
         {
@@ -313,10 +303,10 @@ class FastImage extends View implements Runnable
             }
             else
             {
-                //lock.notify();
-                //invalidate();
+                postInvalidateDelayed(100);
+                Log.d("FASTIMAGE", "onDraw Skip");
             }
+            lock.notify();
         }
-        Log.d("FASTIMAGE", "onDraw End");
     }
 }
