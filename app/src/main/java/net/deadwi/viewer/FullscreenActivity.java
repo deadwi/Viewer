@@ -130,30 +130,6 @@ public class FullscreenActivity extends AppCompatActivity
                 return false;
             }
         });
-
-        /*
-        findViewById(R.id.touchInterceptor).setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event)
-            {
-                if (event.getAction() == MotionEvent.ACTION_DOWN)
-                {
-                    hideKeyboard();
-                }
-                return false;
-            }
-        });
-        */
-
-        /*
-        mContentView = findViewById(R.id.fullscreen_content);
-        mContentView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //toggle();
-            }
-        });
-        */
     }
 
     @Override
@@ -214,7 +190,6 @@ public class FullscreenActivity extends AppCompatActivity
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null)
             actionBar.hide();
-        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
     private void hideKeyboard()
@@ -237,5 +212,6 @@ public class FullscreenActivity extends AppCompatActivity
         hideKeyboard();
         fileListAdapter.updateFileList(search.getText().toString());
         fileListAdapter.notifyDataSetChanged();
+        fileListView.setSelectionAfterHeaderView();
     }
 }

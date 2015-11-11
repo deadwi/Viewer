@@ -83,9 +83,15 @@ public class FileManager
     public ArrayList<FileItem> getMatchFiles(String keyword)
     {
         Log.d("FILE", currentPath);
-        ArrayList<FileItem> fileList = getFilelist(currentPath, isShowHiddenFiles);
+        ArrayList<FileItem> fileList;
+        if(isDirectory(currentPath)==false && isZipFile(currentPath))
+            fileList = getFileListFromZipFile(currentPath,"/");
+        else
+            fileList = getFilelist(currentPath, isShowHiddenFiles);
         filterFilelist(fileList, keyword);
         sortFilelist(fileList,sortType);
+
+        // no update recentFiles
         return fileList;
     }
 

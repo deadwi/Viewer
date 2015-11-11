@@ -2,10 +2,13 @@ package net.deadwi.viewer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Instrumentation;
 import android.content.Intent;
 import android.graphics.Point;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.content.Context;
+import android.os.SystemClock;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -57,7 +60,8 @@ public class FastImageActivity extends AppCompatActivity
         fastView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN)
+                {
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
                     if (event.getX() < (width / 4)) {
@@ -74,6 +78,11 @@ public class FastImageActivity extends AppCompatActivity
                         finish();
                         overridePendingTransition(0, 0);
                     }
+                    /*
+                    else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3)) {
+                        refreshEink();
+                    }
+                    */
                 }
                 return true;
             }
@@ -112,6 +121,28 @@ public class FastImageActivity extends AppCompatActivity
             fastView.drawImageFromZipPath(zipPath, path, (fileIndex+1<files.length ? files[fileIndex+1] : null));
         else
             fastView.drawImageFromPath(path);
+    }
+
+    private void refreshEink()
+    {
+        Log.d("FASTIMAGE", "Refresh");
+        final Instrumentation ins = new Instrumentation();
+
+        Thread task = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int x = width / 2;
+                int y = height - 20;
+                long downTime = SystemClock.uptimeMillis();
+                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0));
+                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_UP, x, y, 0));
+
+                downTime = SystemClock.uptimeMillis();
+                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0));
+                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_UP, x, y, 0));
+            }
+        });
+        task.start();
     }
 }
 
@@ -236,7 +267,7 @@ class FastImage extends View implements Runnable
                 currentPath = path;
                 currentZipPath = zipPath;
                 isBitmap1Out = !isBitmap1Out;
-                invalidate();
+                postInvalidate();
             }
             else
             {
@@ -292,6 +323,13 @@ class FastImage extends View implements Runnable
 
     @Override protected void onDraw(Canvas canvas)
     {
+        if(Thread.holdsLock(lock)==true)
+        {
+            postInvalidateDelayed(100);
+            Log.d("FASTIMAGE", "onDraw Delayed");
+            return;
+        }
+
         Log.d("FASTIMAGE", "onDraw Start");
         synchronized(lock)
         {
