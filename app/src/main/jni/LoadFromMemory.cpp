@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "FreeImage.h"
+#include "FreeImage_Rescale.h"
 #include "StringConverter_For_JNI.h"
 #include "minizip/minizip.h"
 
@@ -16,6 +17,19 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+enum VIEW_MODE {
+    VIEW_MODE_AUTO_L=0,
+    VIEW_MODE_AUTO_R,
+    VIEW_MODE_SINGLE,
+    VIEW_MODE_DOUBLE_L,
+    VIEW_MODE_DOUBLE_R
+};
+
+enum RESIZE_MODE {
+    RESIZE_MODE_FULL_RATE=0,
+    RESIZE_MODE_WIDTH_RATE,
+    RESIZE_MODE_HEIGHT_RATE
+};
 
 /** Generic image loader
 	@param lpszPathName Pointer to the full file name
@@ -161,6 +175,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     unsigned int resizeHeight = 0;
     unsigned int displayX = 0;
     unsigned int displayY = 0;
+
     if(displayRate > originRate)
     {
         // originWidth : originHeight = width : info.height
@@ -180,6 +195,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
         displayY = (info.height-resizeHeight)/2;
     }
 
+    //FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, 0, 0, originWidth, originHeight, FILTER_BILINEAR);
     FIBITMAP *rescaled = FreeImage_Rescale(dib, resizeWidth, resizeHeight, FILTER_BILINEAR);
     FreeImage_Unload(dib);
 
@@ -194,6 +210,87 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     AndroidBitmap_unlockPixels(env, bitmap);
 
     LOGI("image_out ms : %g",now_ms()-starttime);
+}
+
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int viewPage)
+{
+    int status = -1;
+    AndroidBitmapInfo info;
+    void* pixels;
+    int ret;
+    double starttime = now_ms();
+
+    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
+    {
+        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        return status;
+    }
+    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
+    {
+        LOGE("Bitmap format is not RGB_565 !");
+        return status;
+    }
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
+    {
+        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        return status;
+    }
+
+    unsigned int originWidth = FreeImage_GetWidth(dib);
+    unsigned int originHeight = FreeImage_GetHeight(dib);
+    double originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
+    double displayRate = static_cast<double>(info.width)/static_cast<double>(info.height);
+
+    unsigned int resizeWidth = 0;
+    unsigned int resizeHeight = 0;
+    unsigned int displayX = 0;
+    unsigned int displayY = 0;
+
+    bool isLeftPageFirst = true;
+    bool isDoublePage = false;
+
+    if( ((viewMode==VIEW_MODE_AUTO_L || viewMode==VIEW_MODE_AUTO_R) && originRate>1.1) ||
+            (viewMode==VIEW_MODE_DOUBLE_L || viewMode==VIEW_MODE_DOUBLE_R) )
+    {
+        originWidth /= 2;
+        originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
+    }
+
+    if(displayRate > originRate)
+    {
+        // originWidth : originHeight = width : info.height
+        // width = originWidth * info.height / originHeight
+        resizeWidth = info.height * originRate;
+        resizeHeight = info.height;
+        displayX = (info.width-resizeWidth)/2;
+        displayY = 0;
+    }
+    else
+    {
+        // originWidth : originHeight = info.width : height
+        // height = originHeight * info.width / originWidth
+        resizeWidth = info.width;
+        resizeHeight =  info.width / originRate;
+        displayX = 0;
+        displayY = (info.height-resizeHeight)/2;
+    }
+
+    FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, 0, 0, originWidth, originHeight, FILTER_BILINEAR);
+    FreeImage_Unload(dib);
+
+    FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
+    FreeImage_Unload(rescaled);
+
+    FreeImage_GetPitch(dib565);
+    fill_pixels(&info, pixels, make565(255,255,255));
+    copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);
+
+    FreeImage_Unload(dib565);
+    AndroidBitmap_unlockPixels(env, bitmap);
+
+    LOGI("image_out ms : %g",now_ms()-starttime);
+
+    return status;
 }
 
 
@@ -212,25 +309,29 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_deInitFreeImage(
     FreeImage_DeInitialise();
 }
 
-JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path)
+JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path)
 {
+    jboolean isSuccees = JNI_FALSE;
     jboolean isCopy;
     const char * imgPath = env->GetStringUTFChars(path, &isCopy);
     if(imgPath==NULL)
-        return;
+        return isSuccees;
 
     FIBITMAP *dib = GenericLoader(imgPath, 0);
     if(dib)
     {
         LOGI("Load OK");
         image_out(env,bitmap,dib);
+        isSuccees = JNI_TRUE;
     }
 
     env->ReleaseStringUTFChars(path, imgPath);
+    return isSuccees;
 }
 
-JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMemory(JNIEnv *env, jobject obj,jobject bitmap,jbyteArray data,jint dataSize)
+JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMemory(JNIEnv *env, jobject obj,jobject bitmap,jbyteArray data,jint dataSize)
 {
+    jboolean isSuccees = JNI_FALSE;
     jboolean isCopy;
     BYTE* byteData = (BYTE*)env->GetByteArrayElements(data, &isCopy);
     jsize byteDataSize = env->GetArrayLength(data);
@@ -244,14 +345,17 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMem
     {
         LOGI("Load OK");
         image_out(env,bitmap,dib);
+        isSuccees = JNI_TRUE;
     }
 
     // not update
     env->ReleaseByteArrayElements(data, (jbyte*)byteData, JNI_ABORT);
+    return isSuccees;
 }
 
-JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr)
+JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr)
 {
+    jboolean isSuccees = JNI_FALSE;
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
@@ -265,16 +369,19 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
         if(status==0)
         {
             FIMEMORY *hmem = FreeImage_OpenMemory((BYTE*) byteData, dataSize);
-            FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem, 0);
-            FIBITMAP *dib = FreeImage_LoadFromMemory(fif, hmem, 0);
-            FreeImage_CloseMemory(hmem);
-            free(byteData);
-            byteData=0;
-
-            if(dib)
+            if(hmem!=NULL)
             {
-                LOGI("Load OK");
-                image_out(env,bitmap,dib);
+                FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem, 0);
+                FIBITMAP *dib = FreeImage_LoadFromMemory(fif, hmem, 0);
+                FreeImage_CloseMemory(hmem);
+                free(byteData);
+                byteData = 0;
+
+                if (dib) {
+                    LOGI("Load OK");
+                    image_out(env, bitmap, dib);
+                    isSuccees = JNI_TRUE;
+                }
             }
         }
     }
@@ -285,6 +392,7 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
     if(innerFilename)
         free(innerFilename);
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);
+    return isSuccees;
 }
 
 #ifdef __cplusplus

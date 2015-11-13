@@ -4,6 +4,8 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="BUTTON_UP">UP</string>
+    <string name="BUTTON_HOME">HOME</string>
+    <string name="BUTTON_OPTION">OPTION</string>
     <string name="BUTTON_PREV_PAGE"><![CDATA[<]]></string>
     <string name="BUTTON_NEXT_PAGE"><![CDATA[>]]></string>
     <string name="TEXT_SEARCH">Search</string>

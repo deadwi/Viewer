@@ -47,6 +47,21 @@ public class FileManager
         return currentPath;
     }
 
+    public String getCurrentName()
+    {
+        String path = currentPath;
+        if(path.isEmpty()==false && path.charAt(path.length() - 1)=='/')
+            path = path.substring(0, path.length()-1);
+
+        int pos = path.lastIndexOf("/");
+        if(pos>=0)
+            path = path.substring(pos+1);
+
+        if(path.isEmpty()==true)
+            return "/";
+        return path;
+    }
+
     public void setCurrentDir(String path)
     {
         currentPath = path;

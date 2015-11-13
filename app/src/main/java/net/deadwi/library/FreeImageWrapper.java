@@ -28,7 +28,7 @@ public class FreeImageWrapper
 
     static private native void initFreeImage();
     static private native void deInitFreeImage();
-    static public native void loadImageFromPath(Bitmap  bitmap, String path);
-    static public native void loadImageFromZip(Bitmap  bitmap, String zipPath, String path);
-    static public native void loadImageFromMemory(Bitmap  bitmap, Byte[] data, int dataSize);
+    static public native boolean loadImageFromPath(Bitmap  bitmap, String path);
+    static public native boolean loadImageFromZip(Bitmap  bitmap, String zipPath, String path);
+    static public native boolean loadImageFromMemory(Bitmap  bitmap, Byte[] data, int dataSize);
 }

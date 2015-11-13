@@ -17,6 +17,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Intent;
@@ -34,6 +35,7 @@ public class FullscreenActivity extends AppCompatActivity
     public static final int EVENT_VIEW_FILE = 1002;
 
     private FileManager fileManager;
+    private TextView currentNameTextView;
     private ListView fileListView;
     private CustomAdapter fileListAdapter;
 
@@ -66,12 +68,21 @@ public class FullscreenActivity extends AppCompatActivity
         fileManager.setShowHiddenFiles(true);
         fileManager.setSortType(FileManager.SORT_ALPHA);
 
+        currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
         fileListAdapter = new CustomAdapter(fileManager, handler);
         fileListView = (ListView) findViewById(R.id.listView);
         fileListView.setAdapter(fileListAdapter);
 
         refreshFileList(true);
 
+        // 홈 디렉토리
+        findViewById(R.id.buttonHome).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                fileManager.setCurrentDir("/extsd");
+                refreshFileList(true);
+            }
+        });
         // 상위 디렉토리
         findViewById(R.id.buttonUpFolder).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -210,6 +221,7 @@ public class FullscreenActivity extends AppCompatActivity
             search.setText("");
 
         hideKeyboard();
+        currentNameTextView.setText( fileManager.getCurrentName() );
         fileListAdapter.updateFileList(search.getText().toString());
         fileListAdapter.notifyDataSetChanged();
         fileListView.setSelectionAfterHeaderView();

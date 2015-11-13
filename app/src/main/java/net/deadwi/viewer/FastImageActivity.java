@@ -70,7 +70,7 @@ public class FastImageActivity extends AppCompatActivity
                             drawImage();
                         }
                     } else if (event.getX() > (width / 4 * 3)) {
-                        if (fileIndex < files.length - 1) {
+                        if (fileIndex>=0 && fileIndex < files.length - 1) {
                             fileIndex++;
                             drawImage();
                         }
