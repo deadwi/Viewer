@@ -32,7 +32,7 @@
   Filter weights table.<br>
   This class stores contribution information for an entire line (row or column).
 */
-class CWeightsTable
+class CWeightsTable2
 {
 /**
   Sampled filter weight table.<br>
@@ -61,13 +61,13 @@ public:
 	@param uDstSize Length (in pixels) of the destination line buffer
 	@param uSrcSize Length (in pixels) of the source line buffer
 	*/
-	CWeightsTable(CGenericFilter *pFilter, unsigned uDstSize, unsigned uSrcSize);
+	CWeightsTable2(CGenericFilter *pFilter, unsigned uDstSize, unsigned uSrcSize);
 
 	/**
 	Destructor<br>
 	Destroy the weights table
 	*/
-	~CWeightsTable();
+	~CWeightsTable2();
 
 	/** Retrieve a filter weight, given source and destination positions
 	@param dst_pos Pixel position in destination line buffer
@@ -111,7 +111,7 @@ public:
  [online] http://www.codeproject.com/bitmap/2_pass_scaling.asp
 
 */
-class CResizeEngine
+class CResizeEngine2
 {
 private:
 	/// Pointer to the FIR / IIR filter
@@ -123,10 +123,10 @@ public:
 	Constructor
 	@param filter FIR /IIR filter to be used
 	*/
-	CResizeEngine(CGenericFilter* filter):m_pFilter(filter) {}
+	CResizeEngine2(CGenericFilter* filter):m_pFilter(filter) {}
 
 	/// Destructor
-	virtual ~CResizeEngine() {}
+	virtual ~CResizeEngine2() {}
 
 	/** Scale an image to the desired dimensions.
 
@@ -157,7 +157,7 @@ public:
 	@param src_height Height of the source rectangle to be scaled
 	@return Returns the scaled image if successful, returns NULL otherwise
 	*/
-	FIBITMAP* scale(FIBITMAP *src, unsigned dst_width, unsigned dst_height, unsigned src_left, unsigned src_top, unsigned src_width, unsigned src_height);
+	FIBITMAP* scale(FIBITMAP *src, unsigned dst_width, unsigned dst_height, unsigned src_left, unsigned src_top, unsigned src_width, unsigned src_height, unsigned flags);
 
 private:
 

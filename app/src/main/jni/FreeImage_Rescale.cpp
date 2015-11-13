@@ -20,6 +20,7 @@
 // Use at your own risk!
 // ==========================================================
 
+#include "FreeImage_Rescale.h"
 #include "FreeImage_Resize.h"
 
 FIBITMAP * DLL_CALLCONV
@@ -73,13 +74,10 @@ FreeImage_RescaleRect(FIBITMAP *src, int dst_width, int dst_height, int src_left
 		return NULL;
 	}
 
-	CResizeEngine Engine(pFilter);
+	CResizeEngine2 Engine(pFilter);
 
-	dst = Engine.scale(src, dst_width, dst_height, src_left, src_top,
-			src_right - src_left, src_bottom - src_top);
-
+	dst = Engine.scale(src, dst_width, dst_height, src_left, src_top, src_right - src_left, src_bottom - src_top, 0);
 	delete pFilter;
-
 	FreeImage_CloneMetadata(dst, src);
 
 	return dst;

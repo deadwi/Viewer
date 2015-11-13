@@ -30,6 +30,8 @@ public class FastImageActivity extends AppCompatActivity
     private String zipPath;
     private String[] files;
     private int fileIndex;
+    private int viewPage;
+    private int maxViewPage;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -55,6 +57,8 @@ public class FastImageActivity extends AppCompatActivity
                 break;
             }
         }
+        viewPage = 0;
+        maxViewPage = 1;
 
         fastView = new FastImage(this, width, height);
         fastView.setOnTouchListener(new View.OnTouchListener() {
@@ -64,17 +68,11 @@ public class FastImageActivity extends AppCompatActivity
                 {
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
-                    if (event.getX() < (width / 4)) {
-                        if (fileIndex > 0) {
-                            fileIndex--;
-                            drawImage();
-                        }
-                    } else if (event.getX() > (width / 4 * 3)) {
-                        if (fileIndex>=0 && fileIndex < files.length - 1) {
-                            fileIndex++;
-                            drawImage();
-                        }
-                    } else if (event.getY() < (height / 4)) {
+                    if (event.getX() < (width / 4))
+                        previousViewPage();
+                    else if (event.getX() > (width / 4 * 3))
+                        nextViewPage();
+                    else if (event.getY() < (height / 4)) {
                         finish();
                         overridePendingTransition(0, 0);
                     }
@@ -112,15 +110,64 @@ public class FastImageActivity extends AppCompatActivity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
+    private void nextPage()
+    {
+        if (fileIndex > 0)
+        {
+            fileIndex--;
+            viewPage = 0;
+            maxViewPage = 1;
+            drawImage();
+        }
+    }
+
+    private void previousPage()
+    {
+        if (fileIndex>=0 && fileIndex < files.length - 1)
+        {
+            fileIndex++;
+            viewPage = 0;
+            maxViewPage = 1;
+            drawImage();
+        }
+    }
+
+    private void nextViewPage()
+    {
+        maxViewPage = fastView.getCurrentMaxViewPage();
+        Log.d("FASTIMAGE","View page(next) : "+(viewPage+1)+" / "+maxViewPage);
+
+        if(viewPage+1<maxViewPage)
+        {
+            viewPage++;
+            drawImage();
+        }
+        else
+            nextPage();
+    }
+
+    private void previousViewPage()
+    {
+        Log.d("FASTIMAGE","View page(prev) : "+(viewPage+1)+" / "+maxViewPage);
+        if(viewPage>=1 && maxViewPage>=2)
+        {
+            viewPage--;
+            drawImage();
+        }
+        else
+            previousPage();
+    }
+
     private void drawImage()
     {
         if(fileIndex<0 || fileIndex>=files.length)
             return;
         String path = files[fileIndex];
+
         if(zipPath!=null)
-            fastView.drawImageFromZipPath(zipPath, path, (fileIndex+1<files.length ? files[fileIndex+1] : null));
+            fastView.drawImageFromZipPath(zipPath, path, (fileIndex+1<files.length ? files[fileIndex+1] : null), viewPage);
         else
-            fastView.drawImageFromPath(path);
+            fastView.drawImageFromPath(path, viewPage);
     }
 
     private void refreshEink()
@@ -158,12 +205,17 @@ class FastImage extends View implements Runnable
     private Thread loaderThread;
 
     private boolean currentDraw = false;
+
     private boolean currentComplete = false;
     private String currentPath;
     private String currentZipPath;
+    private int currentViewPage;
+    private volatile int currentMaxViewPage;
+
     private boolean prepareComplete = false;
     private String preparePath;
     private String prepareZipPath;
+    private int prepareViewPage;
 
     public void startBackgroundLoader()
     {
@@ -205,10 +257,10 @@ class FastImage extends View implements Runnable
                     {
                         Log.d("FASTIMAGE2", "Current loading");
                         if (currentZipPath == null)
-                            drawImageFromPathToBitmap(currentPath, getOutBitmap());
+                            currentMaxViewPage = drawImageFromPathToBitmap(currentPath, getOutBitmap(), currentViewPage);
                         else
-                            drawImageFromZipPathToBitmap(currentZipPath, currentPath, getOutBitmap());
-                        Log.d("FASTIMAGE2", "Current loaded");
+                            currentMaxViewPage = drawImageFromZipPathToBitmap(currentZipPath, currentPath, getOutBitmap(), currentViewPage);
+                        Log.d("FASTIMAGE2", "Current loaded : view count="+currentMaxViewPage);
                     }
                     currentComplete = true;
                     postInvalidate();
@@ -219,9 +271,9 @@ class FastImage extends View implements Runnable
                     {
                         Log.d("FASTIMAGE2", "Prepare loading");
                         if(prepareZipPath==null)
-                            drawImageFromPathToBitmap(preparePath, getSubBitmap());
+                            drawImageFromPathToBitmap(preparePath, getSubBitmap(), prepareViewPage);
                         else
-                            drawImageFromZipPathToBitmap(prepareZipPath, preparePath, getSubBitmap());
+                            drawImageFromZipPathToBitmap(prepareZipPath, preparePath, getSubBitmap(), prepareViewPage);
                         Log.d("FASTIMAGE2", "Prepare loaded");
                     }
                     prepareComplete = true;
@@ -240,18 +292,26 @@ class FastImage extends View implements Runnable
         }
     }
 
-    public void drawImageFromPath(String path)
+    public int getCurrentMaxViewPage()
+    {
+        // lock?
+        return currentMaxViewPage;
+    }
+
+    public void drawImageFromPath(String path, int viewPage)
     {
         synchronized(lock)
         {
             currentComplete = false;
             currentPath = path;
             currentZipPath = null;
+            currentViewPage = viewPage;
+            currentMaxViewPage = viewPage+1;
             lock.notify();
         }
     }
 
-    public void drawImageFromZipPath(String zipPath, String path, String nextPath)
+    public void drawImageFromZipPath(String zipPath, String path, String nextPath, int viewPage)
     {
         synchronized(lock)
         {
@@ -266,6 +326,9 @@ class FastImage extends View implements Runnable
                 currentComplete = true;
                 currentPath = path;
                 currentZipPath = zipPath;
+                currentViewPage = viewPage;
+                currentMaxViewPage = viewPage+1;
+
                 isBitmap1Out = !isBitmap1Out;
                 postInvalidate();
             }
@@ -274,6 +337,8 @@ class FastImage extends View implements Runnable
                 currentComplete = false;
                 currentPath = path;
                 currentZipPath = zipPath;
+                currentViewPage = viewPage;
+                currentMaxViewPage = viewPage+1;
             }
 
             prepareComplete = false;
@@ -297,18 +362,18 @@ class FastImage extends View implements Runnable
         }
     }
 
-    private void drawImageFromPathToBitmap(String path, Bitmap bitmap)
+    private int drawImageFromPathToBitmap(String path, Bitmap bitmap, int viewPage)
     {
-        FreeImageWrapper.loadImageFromPath(bitmap, path);
+        return FreeImageWrapper.loadImageFromPath(bitmap, path, viewPage);
     }
 
-    private void drawImageFromZipPathToBitmap(String zipPath, String path, Bitmap bitmap)
+    private int drawImageFromZipPathToBitmap(String zipPath, String path, Bitmap bitmap, int viewPage)
     {
         // inner path not start with /
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
-        FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath);
+        return FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath, viewPage);
     }
 
     private Bitmap getOutBitmap()

@@ -1,11 +1,12 @@
 #include <jni.h>
-#include <time.h>
 #include <android/log.h>
 #include <android/bitmap.h>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cmath>
+#include <ctime>
 
 #include "FreeImage.h"
 #include "FreeImage_Rescale.h"
@@ -128,7 +129,7 @@ static void copy_pixels_flip_vertical(void* to, AndroidBitmapInfo*  info, void* 
 
     if(x<0 || y<0 || x+fromWidth>info->width || y+fromHeight>info->height)
     {
-        LOGE("copy_pixels_flip_vertical : Over the range.");
+        LOGE("copy_pixels_flip_vertical : Over the range.(x:%d fromWidth:%d infoWidth:%d y:%d fromHeight:%d infoHeight:%d",x,fromWidth,info->width,y,fromHeight,info->height);
         return;
     }
 
@@ -240,9 +241,14 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     unsigned int originHeight = FreeImage_GetHeight(dib);
     double originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
     double displayRate = static_cast<double>(info.width)/static_cast<double>(info.height);
+    LOGI("origin size : %d %d", originWidth, originHeight);
 
     unsigned int resizeWidth = 0;
     unsigned int resizeHeight = 0;
+    unsigned int originX = 0;
+    unsigned int originY = 0;
+    unsigned int originX2 = 0;
+    unsigned int originY2 = 0;
     unsigned int displayX = 0;
     unsigned int displayY = 0;
 
@@ -254,28 +260,112 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     {
         originWidth /= 2;
         originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
+        isDoublePage = true;
+
+        if(viewMode==VIEW_MODE_AUTO_R || viewMode==VIEW_MODE_DOUBLE_R)
+            isLeftPageFirst = false;
     }
 
-    if(displayRate > originRate)
+    if(resizeMode==RESIZE_MODE_FULL_RATE)
     {
-        // originWidth : originHeight = width : info.height
-        // width = originWidth * info.height / originHeight
+        if (displayRate > originRate) {
+            // originWidth : originHeight = width : info.height
+            // width = originWidth * info.height / originHeight
+            resizeWidth = info.height * originRate;
+            resizeHeight = info.height;
+            displayX = (info.width - resizeWidth) / 2;
+            displayY = 0;
+        }
+        else {
+            // originWidth : originHeight = info.width : height
+            // height = originHeight * info.width / originWidth
+            resizeWidth = info.width;
+            resizeHeight = info.width / originRate;
+            displayX = 0;
+            displayY = (info.height - resizeHeight) / 2;
+        }
+    }
+    else if(resizeMode==RESIZE_MODE_WIDTH_RATE)
+    {
+        resizeWidth = info.width;
+        resizeHeight = info.width / originRate;
+        displayX = 0;
+        displayY = (info.height - resizeHeight) / 2;
+    }
+    else if(resizeMode==RESIZE_MODE_HEIGHT_RATE)
+    {
         resizeWidth = info.height * originRate;
         resizeHeight = info.height;
-        displayX = (info.width-resizeWidth)/2;
+        displayX = (info.width - resizeWidth) / 2;
         displayY = 0;
     }
     else
     {
-        // originWidth : originHeight = info.width : height
-        // height = originHeight * info.width / originWidth
         resizeWidth = info.width;
-        resizeHeight =  info.width / originRate;
+        resizeHeight = info.height;
         displayX = 0;
-        displayY = (info.height-resizeHeight)/2;
+        displayY = 0;
     }
 
-    FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, 0, 0, originWidth, originHeight, FILTER_BILINEAR);
+    int viewCount=1;
+    originX2 = originWidth;
+    originY2 = originHeight;
+    if(resizeHeight>info.height)
+    {
+        viewCount = ceil(static_cast<double>(resizeHeight) / static_cast<double>(info.height));
+        resizeHeight = info.height;
+        double originViewHeight = static_cast<double>(originHeight)/viewCount;
+        int viewIndex=viewPage % viewCount;
+
+        displayX = 0;
+        displayY = 0;
+        originY = originViewHeight*viewIndex;
+        originY2 = originY + originViewHeight;
+        if(originY2>originHeight)
+        {
+            originY = originHeight-originViewHeight;
+            originY2 = originHeight;
+        }
+    }
+    else if(resizeWidth>info.width)
+    {
+        viewCount = ceil(static_cast<double>(resizeWidth) / static_cast<double>(info.width));
+        resizeWidth=info.width;
+        double originViewWidth = static_cast<double>(originWidth)/viewCount;
+        int viewIndex=viewPage % viewCount;
+
+        displayX = 0;
+        displayY = 0;
+        originX = originViewWidth*viewIndex;
+        originX2 = originX + originViewWidth;
+        if(originX2>originWidth)
+        {
+            originX = originWidth-originViewWidth;
+            originX2 = originViewWidth;
+        }
+    }
+
+    // select left or right page
+    if(isDoublePage)
+    {
+        bool isFirstPage = isLeftPageFirst;
+        // next split page
+        if(viewPage>=viewCount)
+            isFirstPage = !isFirstPage;
+        if(isFirstPage==false)
+        {
+            originX += originWidth;
+            originX2 += originWidth;
+        }
+    }
+
+    LOGI("origin xy-xy : %d %d %d %d", originX, originY, originX2, originY2);
+
+    //FIBITMAP *dibTmp = FreeImage_Copy(dib, originX, originY, originX2, originY2);
+    //FIBITMAP *rescaled = FreeImage_Rescale(dibTmp, resizeWidth, resizeHeight);
+    //FreeImage_Unload(dibTmp);
+
+    FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, originX, originY, originX2, originY2, FILTER_BILINEAR);
     FreeImage_Unload(dib);
 
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
@@ -290,7 +380,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
 
     LOGI("image_out ms : %g",now_ms()-starttime);
 
-    return status;
+    return viewCount*(isDoublePage ? 2 : 1);
 }
 
 
@@ -307,26 +397,6 @@ JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_initFreeImage(JN
 JNIEXPORT void JNICALL Java_net_deadwi_library_FreeImageWrapper_deInitFreeImage(JNIEnv *env, jobject obj)
 {
     FreeImage_DeInitialise();
-}
-
-JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path)
-{
-    jboolean isSuccees = JNI_FALSE;
-    jboolean isCopy;
-    const char * imgPath = env->GetStringUTFChars(path, &isCopy);
-    if(imgPath==NULL)
-        return isSuccees;
-
-    FIBITMAP *dib = GenericLoader(imgPath, 0);
-    if(dib)
-    {
-        LOGI("Load OK");
-        image_out(env,bitmap,dib);
-        isSuccees = JNI_TRUE;
-    }
-
-    env->ReleaseStringUTFChars(path, imgPath);
-    return isSuccees;
 }
 
 JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromMemory(JNIEnv *env, jobject obj,jobject bitmap,jbyteArray data,jint dataSize)
@@ -353,9 +423,28 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
     return isSuccees;
 }
 
-JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr)
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jint viewPage)
 {
-    jboolean isSuccees = JNI_FALSE;
+    jint status = -1;
+    jboolean isCopy;
+    const char * imgPath = env->GetStringUTFChars(path, &isCopy);
+    if(imgPath==NULL)
+        return status;
+
+    FIBITMAP *dib = GenericLoader(imgPath, 0);
+    if(dib)
+    {
+        LOGI("Load OK");
+        status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_WIDTH_RATE,viewPage);
+    }
+
+    env->ReleaseStringUTFChars(path, imgPath);
+    return status;
+}
+
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jint viewPage)
+{
+    jboolean status = -1;
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
@@ -365,8 +454,8 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
     if(dataSize>0)
     {
         byteData = (jbyte*)malloc(dataSize);
-        jsize status = getFileData(zipfilename, innerFilename, byteData, dataSize);
-        if(status==0)
+        jsize ret = getFileData(zipfilename, innerFilename, byteData, dataSize);
+        if(ret==0)
         {
             FIMEMORY *hmem = FreeImage_OpenMemory((BYTE*) byteData, dataSize);
             if(hmem!=NULL)
@@ -379,8 +468,7 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
 
                 if (dib) {
                     LOGI("Load OK");
-                    image_out(env, bitmap, dib);
-                    isSuccees = JNI_TRUE;
+                    status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_FULL_RATE,viewPage);
                 }
             }
         }
@@ -392,7 +480,7 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
     if(innerFilename)
         free(innerFilename);
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);
-    return isSuccees;
+    return status;
 }
 
 #ifdef __cplusplus
