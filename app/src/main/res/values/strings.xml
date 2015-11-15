@@ -9,4 +9,6 @@
     <string name="BUTTON_PREV_PAGE"><![CDATA[<]]></string>
     <string name="BUTTON_NEXT_PAGE"><![CDATA[>]]></string>
     <string name="TEXT_SEARCH">Search</string>
+    <string name="MESSAGE_LAST_PAGE">마지막 페이지</string>
+    <string name="MESSAGE_FIRST_PAGE">첫번째 페이지</string>
 </resources>

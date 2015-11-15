@@ -174,10 +174,18 @@ public class FullscreenActivity extends AppCompatActivity
                     Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
                     String fullPath = FileItem.getFullPath(msg.getData().getString("path"),msg.getData().getString("name"));
                     ArrayList<FileItem> files = fileManager.getRecentFiles();
-                    String[] pathArray = new String[files.size()];
+
+                    int imageFileCount = 0;
+                    for(FileItem item : files)
+                        if (fileManager.isImageFile(item.name))
+                            imageFileCount++;
+
+                    String[] pathArray = new String[imageFileCount];
                     int i =0;
                     for(FileItem item : files)
                     {
+                        if(fileManager.isImageFile(item.name)==false)
+                            continue;
                         pathArray[i] = item.getFullPath();
                         if(item.type == FileItem.TYPE_DIR || item.type == FileItem.TYPE_DIR_IN_ZIP)
                             pathArray[i] += "/";

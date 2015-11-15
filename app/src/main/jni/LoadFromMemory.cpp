@@ -13,10 +13,24 @@
 #include "StringConverter_For_JNI.h"
 #include "minizip/minizip.h"
 
-
-#define  LOG_TAG    "libimage"
+//#define  LOG_TAG    "libimage"
+#ifdef LOG_TAG
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#else
+#define  LOGI(...)
+#define  LOGE(...)
+#endif
+
+const int RETURN_PAGE_UNIT = 100000;
+
+enum RETURN_CODE {
+    RETURN_CODE_OK = 0,
+    RETURN_CODE_FAIL_UNKOWN = -1,
+    RETURN_CODE_UNKOWN_TYPE = -2,
+    RETURN_CODE_UNSUPPORT_TYPE = -3,
+    RETURN_CODE_FAIL_TO_LOADIMAGE = -4,
+};
 
 enum VIEW_MODE {
     VIEW_MODE_AUTO_L=0,
@@ -213,7 +227,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
-static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int viewPage)
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, bool isLastPage, int viewIndex)
 {
     int status = -1;
     AndroidBitmapInfo info;
@@ -315,11 +329,11 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
         viewCount = ceil(static_cast<double>(resizeHeight) / static_cast<double>(info.height));
         resizeHeight = info.height;
         double originViewHeight = static_cast<double>(originHeight)/viewCount;
-        int viewIndex=viewPage % viewCount;
+        int viewPos=viewIndex % viewCount;
 
         displayX = 0;
         displayY = 0;
-        originY = originViewHeight*viewIndex;
+        originY = originViewHeight*viewPos;
         originY2 = originY + originViewHeight;
         if(originY2>originHeight)
         {
@@ -332,11 +346,11 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
         viewCount = ceil(static_cast<double>(resizeWidth) / static_cast<double>(info.width));
         resizeWidth=info.width;
         double originViewWidth = static_cast<double>(originWidth)/viewCount;
-        int viewIndex=viewPage % viewCount;
+        int viewPos=viewIndex % viewCount;
 
         displayX = 0;
         displayY = 0;
-        originX = originViewWidth*viewIndex;
+        originX = originViewWidth*viewPos;
         originX2 = originX + originViewWidth;
         if(originX2>originWidth)
         {
@@ -350,7 +364,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     {
         bool isFirstPage = isLeftPageFirst;
         // next split page
-        if(viewPage>=viewCount)
+        if(viewIndex>=viewCount || isLastPage==true)
             isFirstPage = !isFirstPage;
         if(isFirstPage==false)
         {
@@ -359,7 +373,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
         }
     }
 
-    LOGI("origin xy-xy : %d %d %d %d", originX, originY, originX2, originY2);
+    LOGI("origin xy-xy : %d %d %d %d (last : %d)", originX, originY, originX2, originY2, (isLastPage ? 1 : 0));
 
     //FIBITMAP *dibTmp = FreeImage_Copy(dib, originX, originY, originX2, originY2);
     //FIBITMAP *rescaled = FreeImage_Rescale(dibTmp, resizeWidth, resizeHeight);
@@ -380,7 +394,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
 
     LOGI("image_out ms : %g",now_ms()-starttime);
 
-    return viewCount*(isDoublePage ? 2 : 1);
+    return viewCount+RETURN_PAGE_UNIT*(isDoublePage ? 1 : 0);
 }
 
 
@@ -423,31 +437,43 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
     return isSuccees;
 }
 
-JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jint viewPage)
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jboolean isLastPage, jint viewIndex)
 {
-    jint status = -1;
+    jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
     const char * imgPath = env->GetStringUTFChars(path, &isCopy);
     if(imgPath==NULL)
         return status;
+    LOGI("Load : %s",imgPath);
 
-    FIBITMAP *dib = GenericLoader(imgPath, 0);
-    if(dib)
+    FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(imgPath);
+    if(fif == FIF_UNKNOWN)
+        status = RETURN_CODE_UNKOWN_TYPE;
+    else if(FreeImage_FIFSupportsReading(fif)==false)
+        status = RETURN_CODE_UNSUPPORT_TYPE;
+    else
     {
-        LOGI("Load OK");
-        status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_WIDTH_RATE,viewPage);
+        FIBITMAP *dib = FreeImage_Load(fif, imgPath, 0);
+        if(dib)
+        {
+            LOGI("Load OK");
+            status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_WIDTH_RATE,isLastPage==JNI_TRUE,viewIndex);
+        }
+        else
+            status = RETURN_CODE_FAIL_TO_LOADIMAGE;
     }
 
     env->ReleaseStringUTFChars(path, imgPath);
     return status;
 }
 
-JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jint viewPage)
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jboolean isLastPage, jint viewIndex)
 {
-    jboolean status = -1;
+    jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
+    LOGI("Load : %s",innerFilename);
 
     jbyte* byteData = NULL;
     jsize dataSize = getFileData(zipfilename, innerFilename, NULL, 0);
@@ -468,7 +494,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
 
                 if (dib) {
                     LOGI("Load OK");
-                    status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_FULL_RATE,viewPage);
+                    status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_FULL_RATE,isLastPage==JNI_TRUE,viewIndex);
                 }
             }
         }

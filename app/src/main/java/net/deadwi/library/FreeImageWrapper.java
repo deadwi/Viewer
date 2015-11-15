@@ -8,6 +8,7 @@ public class FreeImageWrapper
         System.loadLibrary("plasma");
     }
     static private boolean isInit=false;
+    final static public int RETURN_PAGE_UNIT = 100000;
 
     static public void init()
     {
@@ -29,6 +30,6 @@ public class FreeImageWrapper
     static private native void initFreeImage();
     static private native void deInitFreeImage();
     static public native boolean loadImageFromMemory(Bitmap  bitmap, Byte[] data, int dataSize);
-    static public native int loadImageFromPath(Bitmap  bitmap, String path, int viewPage);
-    static public native int loadImageFromZip(Bitmap  bitmap, String zipPath, String path, int viewPage);
+    static public native int loadImageFromPath(Bitmap  bitmap, String path, boolean isLastPage, int viewIndex);
+    static public native int loadImageFromZip(Bitmap  bitmap, String zipPath, String path, boolean isLastPage, int viewIndex);
 }
