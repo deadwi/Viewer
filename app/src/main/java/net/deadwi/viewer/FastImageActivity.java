@@ -404,6 +404,12 @@ class FastImage extends View implements Runnable
     {
         synchronized(lock)
         {
+            if(current.complete==false && next.complete==false)
+            {
+                // wait;
+
+            }
+
             ViewLocation tcurrent = current.clone();
             int nextViewIndex=0;
 

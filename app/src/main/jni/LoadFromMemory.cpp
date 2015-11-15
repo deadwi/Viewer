@@ -324,11 +324,11 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     int viewCount=1;
     originX2 = originWidth;
     originY2 = originHeight;
-    if(resizeHeight>info.height)
+    if(resizeHeight>info.height) // RESIZE_MODE_WIDTH_RATE
     {
         viewCount = ceil(static_cast<double>(resizeHeight) / static_cast<double>(info.height));
         resizeHeight = info.height;
-        double originViewHeight = static_cast<double>(originHeight)/viewCount;
+        double originViewHeight = info.height * originRate;
         int viewPos=viewIndex % viewCount;
 
         displayX = 0;
@@ -341,11 +341,11 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
             originY2 = originHeight;
         }
     }
-    else if(resizeWidth>info.width)
+    else if(resizeWidth>info.width) // RESIZE_MODE_HEIGHT_RATE
     {
         viewCount = ceil(static_cast<double>(resizeWidth) / static_cast<double>(info.width));
         resizeWidth=info.width;
-        double originViewWidth = static_cast<double>(originWidth)/viewCount;
+        double originViewWidth = info.width / originRate;
         int viewPos=viewIndex % viewCount;
 
         displayX = 0;
