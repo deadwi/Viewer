@@ -13,7 +13,7 @@
 #include "StringConverter_For_JNI.h"
 #include "minizip/minizip.h"
 
-//#define  LOG_TAG    "libimage"
+#define  LOG_TAG    "libimage"
 #ifdef LOG_TAG
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -227,7 +227,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
-static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, bool isLastPage, int viewIndex)
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, bool isLastPage, int viewIndex, double nextGapRate=0.1)
 {
     int status = -1;
     AndroidBitmapInfo info;
@@ -321,19 +321,20 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
         displayY = 0;
     }
 
+    LOGI("Out resize : %d %d in (%d %d)", resizeWidth, resizeHeight, info.width, info.height);
+
     int viewCount=1;
     originX2 = originWidth;
     originY2 = originHeight;
     if(resizeHeight>info.height) // RESIZE_MODE_WIDTH_RATE
     {
-        viewCount = ceil(static_cast<double>(resizeHeight) / static_cast<double>(info.height));
-        resizeHeight = info.height;
         double originViewHeight = info.height * originRate;
-        int viewPos=viewIndex % viewCount;
+        viewCount = ceil( static_cast<double>(originHeight) / ((1.0-nextGapRate)*originViewHeight) );
+        resizeHeight = info.height;
 
         displayX = 0;
         displayY = 0;
-        originY = originViewHeight*viewPos;
+        originY = ((1.0-nextGapRate)*originViewHeight)*(viewIndex % viewCount);
         originY2 = originY + originViewHeight;
         if(originY2>originHeight)
         {
@@ -343,14 +344,13 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     }
     else if(resizeWidth>info.width) // RESIZE_MODE_HEIGHT_RATE
     {
-        viewCount = ceil(static_cast<double>(resizeWidth) / static_cast<double>(info.width));
-        resizeWidth=info.width;
         double originViewWidth = info.width / originRate;
-        int viewPos=viewIndex % viewCount;
+        viewCount = ceil(static_cast<double>(originWidth) / ((1.0-nextGapRate)*originViewWidth) );
+        resizeWidth = info.width;
 
         displayX = 0;
         displayY = 0;
-        originX = originViewWidth*viewPos;
+        originX = ((1.0-nextGapRate)*originViewWidth)*(viewIndex % viewCount);
         originX2 = originX + originViewWidth;
         if(originX2>originWidth)
         {
