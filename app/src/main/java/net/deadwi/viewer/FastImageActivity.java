@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ public class FastImageActivity extends AppCompatActivity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
         FreeImageWrapper.init();
         width = getWindowManager().getDefaultDisplay().getWidth();
         height = getWindowManager().getDefaultDisplay().getHeight();
@@ -484,9 +486,24 @@ class FastImage extends View implements Runnable
         }
     }
 
+    private int getOptionViewMode()
+    {
+        return FreeImageWrapper.getOptionViewMode(Option.getInstance().IsReadLeftToRight(), Option.getInstance().getSplitOption());
+    }
+
+    private int optionResizeMode()
+    {
+        return FreeImageWrapper.getOptionResizeMode(Option.getInstance().getDisplayOption());
+    }
+
+    private int optionResizeMethod()
+    {
+        return FreeImageWrapper.getOptionResizeMethod(Option.getInstance().getResizeMethodOption());
+    }
+
     private int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex)
     {
-        return FreeImageWrapper.loadImageFromPath(bitmap, path, isLastPage, viewIndex);
+        return FreeImageWrapper.loadImageFromPath(bitmap, path, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod());
     }
 
     private int drawImageFromZipPathToBitmap(String zipPath, String path, Bitmap bitmap, boolean isLastPage, int viewIndex)
@@ -495,7 +512,7 @@ class FastImage extends View implements Runnable
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
-        return FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath, isLastPage, viewIndex);
+        return FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod());
     }
 
     private Bitmap getOutBitmap()

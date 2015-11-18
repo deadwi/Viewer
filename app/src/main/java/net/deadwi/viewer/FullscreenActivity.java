@@ -2,6 +2,7 @@ package net.deadwi.viewer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -61,7 +62,6 @@ public class FullscreenActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_fullscreen);
 
         fileManager = new FileManager();
@@ -75,6 +75,15 @@ public class FullscreenActivity extends AppCompatActivity
 
         refreshFileList(true);
 
+        // 옵션 디렉토리
+        findViewById(R.id.buttonOption).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent myIntent = new Intent(FullscreenActivity.this, OptionActivity.class);
+                startActivity(myIntent);
+                overridePendingTransition(0, 0);
+            }
+        });
         // 홈 디렉토리
         findViewById(R.id.buttonHome).setOnClickListener(new View.OnClickListener() {
             @Override

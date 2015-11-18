@@ -11,4 +11,6 @@
     <string name="TEXT_SEARCH">Search</string>
     <string name="MESSAGE_LAST_PAGE">마지막 페이지</string>
     <string name="MESSAGE_FIRST_PAGE">첫번째 페이지</string>
+    <string name="BUTTON_OK">OK</string>
+    <string name="BUTTON_CANCEL">Cancel</string>
 </resources>

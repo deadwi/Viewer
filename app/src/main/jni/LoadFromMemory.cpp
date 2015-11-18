@@ -33,9 +33,9 @@ enum RETURN_CODE {
 };
 
 enum VIEW_MODE {
-    VIEW_MODE_AUTO_L=0,
+    VIEW_MODE_SINGLE=0,
+    VIEW_MODE_AUTO_L,
     VIEW_MODE_AUTO_R,
-    VIEW_MODE_SINGLE,
     VIEW_MODE_DOUBLE_L,
     VIEW_MODE_DOUBLE_R
 };
@@ -227,7 +227,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
-static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, bool isLastPage, int viewIndex, double nextGapRate=0.1)
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int resizeMethod, bool isLastPage, int viewIndex, double nextGapRate=0.1)
 {
     int status = -1;
     AndroidBitmapInfo info;
@@ -328,8 +328,8 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     originY2 = originHeight;
     if(resizeHeight>info.height) // RESIZE_MODE_WIDTH_RATE
     {
-        double originViewHeight = info.height * originRate;
-        viewCount = ceil( static_cast<double>(originHeight) / ((1.0-nextGapRate)*originViewHeight) );
+        double originViewHeight = static_cast<double>(info.height) * (static_cast<double>(originWidth)/static_cast<double>(info.width));
+        viewCount = ceil( static_cast<double>(resizeHeight) / ((1.0-nextGapRate)*info.height) );
         resizeHeight = info.height;
 
         displayX = 0;
@@ -344,8 +344,8 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     }
     else if(resizeWidth>info.width) // RESIZE_MODE_HEIGHT_RATE
     {
-        double originViewWidth = info.width / originRate;
-        viewCount = ceil(static_cast<double>(originWidth) / ((1.0-nextGapRate)*originViewWidth) );
+        double originViewWidth = static_cast<double>(info.width) * (static_cast<double>(originHeight)/static_cast<double>(info.height));
+        viewCount = ceil(static_cast<double>(resizeWidth) / ((1.0-nextGapRate)*info.width) );
         resizeWidth = info.width;
 
         displayX = 0;
@@ -355,7 +355,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
         if(originX2>originWidth)
         {
             originX = originWidth-originViewWidth;
-            originX2 = originViewWidth;
+            originX2 = originWidth;
         }
     }
 
@@ -379,7 +379,7 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     //FIBITMAP *rescaled = FreeImage_Rescale(dibTmp, resizeWidth, resizeHeight);
     //FreeImage_Unload(dibTmp);
 
-    FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, originX, originY, originX2, originY2, FILTER_BILINEAR);
+    FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, originX, originY, originX2, originY2, (FREE_IMAGE_FILTER)resizeMethod);
     FreeImage_Unload(dib);
 
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
@@ -437,7 +437,8 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
     return isSuccees;
 }
 
-JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jboolean isLastPage, jint viewIndex)
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jboolean isLastPage, jint viewIndex,
+                                                                                  int optionViewMode, int optionResizeMode, int optionResizeMethod)
 {
     jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
@@ -457,7 +458,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
         if(dib)
         {
             LOGI("Load OK");
-            status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_WIDTH_RATE,isLastPage==JNI_TRUE,viewIndex);
+            status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex);
         }
         else
             status = RETURN_CODE_FAIL_TO_LOADIMAGE;
@@ -467,7 +468,8 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
     return status;
 }
 
-JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jboolean isLastPage, jint viewIndex)
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jboolean isLastPage, jint viewIndex,
+                                                                                 int optionViewMode, int optionResizeMode, int optionResizeMethod)
 {
     jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
@@ -494,7 +496,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
 
                 if (dib) {
                     LOGI("Load OK");
-                    status = image_out2(env,bitmap,dib,VIEW_MODE_AUTO_L,RESIZE_MODE_FULL_RATE,isLastPage==JNI_TRUE,viewIndex);
+                    status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex);
                 }
             }
         }
