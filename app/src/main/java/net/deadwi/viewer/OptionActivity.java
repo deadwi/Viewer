@@ -100,6 +100,9 @@ public class OptionActivity  extends AppCompatActivity
             case Option.RESIZE_METHOD_CATMULLROM:
                 ((RadioButton) findViewById(R.id.radioMethod4)).setChecked(true);
                 break;
+            case Option.RESIZE_METHOD_LANCZOS3:
+                ((RadioButton) findViewById(R.id.radioMethod5)).setChecked(true);
+                break;
             case Option.RESIZE_METHOD_BILINEAR:
             default:
                 ((RadioButton) findViewById(R.id.radioMethod2)).setChecked(true);
@@ -131,6 +134,8 @@ public class OptionActivity  extends AppCompatActivity
             Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_BSPLINE);
         else if(((RadioButton) findViewById(R.id.radioMethod4)).isChecked())
             Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_CATMULLROM);
+        else if(((RadioButton) findViewById(R.id.radioMethod5)).isChecked())
+            Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_LANCZOS3);
         else
             Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_BILINEAR);
 

@@ -34,6 +34,7 @@ public class FullscreenActivity extends AppCompatActivity
 {
     public static final int EVENT_UPDATE_FILE_LIST = 1001;
     public static final int EVENT_VIEW_FILE = 1002;
+    public static final int EVENT_OPEN_FILE = 1003;
 
     private FileManager fileManager;
     private TextView currentNameTextView;
@@ -62,6 +63,11 @@ public class FullscreenActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        if(Option.getInstance().IsPortrait())
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        else
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
         setContentView(R.layout.activity_fullscreen);
 
         fileManager = new FileManager();
@@ -175,41 +181,76 @@ public class FullscreenActivity extends AppCompatActivity
                     if(fullPath.endsWith("/")==false)
                         fullPath += "/";
                     fullPath += msg.getData().getString("name");
-                    fileManager.setCurrentDir(fullPath);
-                    refreshFileList(true);
+                    if(viewImage(null, null, fullPath)==false)
+                    {
+                        Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
+                    }
                 }
                 else if(fileManager.isImageFile(name))
                 {
-                    Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
-                    String fullPath = FileItem.getFullPath(msg.getData().getString("path"),msg.getData().getString("name"));
-                    ArrayList<FileItem> files = fileManager.getRecentFiles();
-
-                    int imageFileCount = 0;
-                    for(FileItem item : files)
-                        if (fileManager.isImageFile(item.name))
-                            imageFileCount++;
-
-                    String[] pathArray = new String[imageFileCount];
-                    int i =0;
-                    for(FileItem item : files)
+                    if(viewImage(msg.getData().getString("path"), msg.getData().getString("name"), msg.getData().getString("zipPath"))==false)
                     {
-                        if(fileManager.isImageFile(item.name)==false)
-                            continue;
-                        pathArray[i] = item.getFullPath();
-                        if(item.type == FileItem.TYPE_DIR || item.type == FileItem.TYPE_DIR_IN_ZIP)
-                            pathArray[i] += "/";
-                        i++;
+                        Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
                     }
-
-                    myIntent.putExtra("path", fullPath);
-                    myIntent.putExtra("zipPath", msg.getData().getString("zipPath"));
-                    myIntent.putExtra("files", pathArray);
-
-                    startActivity(myIntent);
-                    overridePendingTransition(0, 0);
+                }
+                break;
+            case EVENT_OPEN_FILE:
+                if(fileManager.isZipFile(msg.getData().getString("name")))
+                {
+                    String fullPath = msg.getData().getString("path");
+                    if(fullPath.endsWith("/")==false)
+                        fullPath += "/";
+                    fullPath += msg.getData().getString("name");
+                    fileManager.setCurrentDir(fullPath);
+                    refreshFileList(true);
                 }
                 break;
         }
+    }
+
+    private boolean viewImage(String path, String name, String zipPath)
+    {
+        Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
+        String fullPath = null;
+        ArrayList<FileItem> files;
+
+        if(path==null && name==null)
+        {
+            myIntent.putExtra("fileindex",0);
+            files = fileManager.getFiles(zipPath);
+        }
+        else
+        {
+            fullPath = FileItem.getFullPath(path,name);
+            files = fileManager.getRecentFiles();
+        }
+
+        int imageFileCount = 0;
+        for(FileItem item : files)
+            if (fileManager.isImageFile(item.name))
+                imageFileCount++;
+        if(imageFileCount==0)
+            return false;
+
+        String[] pathArray = new String[imageFileCount];
+        int i =0;
+        for(FileItem item : files)
+        {
+            if(fileManager.isImageFile(item.name)==false)
+                continue;
+            pathArray[i] = item.getFullPath();
+            if(item.type == FileItem.TYPE_DIR || item.type == FileItem.TYPE_DIR_IN_ZIP)
+                pathArray[i] += "/";
+            i++;
+        }
+
+        myIntent.putExtra("path", fullPath);
+        myIntent.putExtra("zipPath", zipPath);
+        myIntent.putExtra("files", pathArray);
+
+        startActivity(myIntent);
+        overridePendingTransition(0, 0);
+        return true;
     }
 
     private void hide()

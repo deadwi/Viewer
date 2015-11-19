@@ -69,6 +69,8 @@ public class FreeImageWrapper
                 return 3;
             case Option.RESIZE_METHOD_CATMULLROM:
                 return 4;
+            case Option.RESIZE_METHOD_LANCZOS3:
+                return 5;
         }
         return 0;
     }

@@ -29,6 +29,7 @@ public class CustomAdapter extends BaseAdapter
 
     private class CustomHolder {
         TextView    textHead;
+        TextView    textInfo;
         TextView    text;
     }
 
@@ -64,6 +65,7 @@ public class CustomAdapter extends BaseAdapter
         final Context context = parent.getContext();
 
         TextView text;
+        TextView textInfo;
         TextView textHead;
         CustomHolder holder;
 
@@ -75,11 +77,13 @@ public class CustomAdapter extends BaseAdapter
             convertView = inflater.inflate(R.layout.file_item, parent, false);
 
             text = (TextView) convertView.findViewById(R.id.text);
+            textInfo = (TextView) convertView.findViewById(R.id.textInfo);
             textHead = (TextView) convertView.findViewById(R.id.textHead);
 
             // 홀더 생성 및 Tag로 등록
             holder = new CustomHolder();
             holder.text = text;
+            holder.textInfo = textInfo;
             holder.textHead = textHead;
             convertView.setTag(holder);
         }
@@ -87,13 +91,21 @@ public class CustomAdapter extends BaseAdapter
         {
             holder = (CustomHolder) convertView.getTag();
             text = holder.text;
+            textInfo = holder.textInfo;
             textHead = holder.textHead;
         }
         text.setText(list.get(position).name);
+
         if(list.get(position).type == FileItem.TYPE_DIR || list.get(position).type == FileItem.TYPE_DIR_IN_ZIP)
+        {
             textHead.setText("D");
+            textInfo.setText("");
+        }
         else
+        {
             textHead.setText("F");
+            textInfo.setText(FileManager.getFileSizeText(list.get(position).size));
+        }
 
         convertView.setOnClickListener(new OnClickListener() {
             @Override
@@ -127,8 +139,21 @@ public class CustomAdapter extends BaseAdapter
 
         convertView.setOnLongClickListener(new OnLongClickListener() {
             @Override
-            public boolean onLongClick(View v) {
-                Toast.makeText(context, "리스트 롱 클릭 : " + list.get(pos).name, Toast.LENGTH_SHORT).show();
+            public boolean onLongClick(View v)
+            {
+                FileItem item = list.get(pos);
+                if (item.type == FileItem.TYPE_FILE)
+                {
+                    Message msg = Message.obtain();
+                    Bundle data = new Bundle();
+                    data.putString("path", item.path);
+                    data.putString("name", item.name);
+                    data.putString("zipPath", item.zipPath);
+
+                    msg.setData(data);
+                    msg.what = FullscreenActivity.EVENT_OPEN_FILE;
+                    handler.sendMessage(msg);
+                }
                 return true;
             }
         });

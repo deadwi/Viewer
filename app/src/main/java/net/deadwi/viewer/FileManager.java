@@ -110,6 +110,17 @@ public class FileManager
         return fileList;
     }
 
+    public ArrayList<FileItem> getFiles(String path)
+    {
+        ArrayList<FileItem> fileList;
+        if(isDirectory(path)==false && isZipFile(path))
+            fileList = getFileListFromZipFile(path,"/");
+        else
+            fileList = getFilelist(path, isShowHiddenFiles);
+        sortFilelist(fileList, sortType);
+        return fileList;
+    }
+
     public void movePreviousDir()
     {
         if(currentPath.compareTo("/")==0 || currentPath.isEmpty())
@@ -130,7 +141,18 @@ public class FileManager
         return new File(path).isDirectory();
     }
 
-    public static String integerToIPAddress(int ip)
+    static public String getFileSizeText(long size)
+    {
+        if(size<1000)
+            return size+"B";
+        else if(size/1024<1000)
+            return String.format("%.1fK", size/1024.0);
+        else if(size/1024/1024<1000)
+            return String.format("%.1fM", size/1024.0/1024.0);
+        return String.format("%.1fG", size/1024.0/1024.0/1024.0);
+    }
+
+    static public String integerToIPAddress(int ip)
     {
         String ascii_address;
         int[] num = new int[4];

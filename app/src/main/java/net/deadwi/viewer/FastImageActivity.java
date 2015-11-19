@@ -12,6 +12,7 @@ import android.content.Context;
 import android.os.SystemClock;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -39,13 +40,20 @@ public class FastImageActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         FreeImageWrapper.init();
-        width = getWindowManager().getDefaultDisplay().getWidth();
-        height = getWindowManager().getDefaultDisplay().getHeight();
+        //width = getWindowManager().getDefaultDisplay().getWidth();
+        //height = getWindowManager().getDefaultDisplay().getHeight();
+        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
+        width = dm.widthPixels;
+        height = dm.heightPixels;
+        Log.d("FASTIMAGE","Display : "+width+"x"+height);
 
         String path = getIntent().getStringExtra("path");
         zipPath = getIntent().getStringExtra("zipPath");
         files = getIntent().getStringArrayExtra("files");
-        currntFileIndex = getFileIndex(path);
+        if(path==null)
+            currntFileIndex = getIntent().getIntExtra("fileindex",0);
+        else
+            currntFileIndex = getFileIndex(path);
 
         fastView = new FastImage(this, width, height);
         fastView.setOnTouchListener(new View.OnTouchListener() {
@@ -388,11 +396,20 @@ class FastImage extends View implements Runnable
     public FastImage(Context context, int width, int height)
     {
         super(context);
+        if(mBitmap1!=null && mBitmap1.getWidth()!=width)
+        {
+            mBitmap1.recycle();
+            mBitmap2.recycle();
+            mBitmap1=null;
+            mBitmap2=null;
+        }
+
         if(mBitmap1==null)
         {
             mBitmap1 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
             mBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         }
+
         current = new ViewLocation();
         next = new ViewLocation();
     }
