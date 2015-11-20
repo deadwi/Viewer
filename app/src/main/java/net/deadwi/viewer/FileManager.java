@@ -49,17 +49,7 @@ public class FileManager
 
     public String getCurrentName()
     {
-        String path = currentPath;
-        if(path.isEmpty()==false && path.charAt(path.length() - 1)=='/')
-            path = path.substring(0, path.length()-1);
-
-        int pos = path.lastIndexOf("/");
-        if(pos>=0)
-            path = path.substring(pos+1);
-
-        if(path.isEmpty()==true)
-            return "/";
-        return path;
+        return getNameFromFullpath(currentPath);
     }
 
     public void setCurrentDir(String path)
@@ -149,7 +139,35 @@ public class FileManager
             return String.format("%.1fK", size/1024.0);
         else if(size/1024/1024<1000)
             return String.format("%.1fM", size/1024.0/1024.0);
-        return String.format("%.1fG", size/1024.0/1024.0/1024.0);
+        return String.format("%.1fG", size / 1024.0 / 1024.0 / 1024.0);
+    }
+
+    static public String getNameFromFullpath(String path)
+    {
+        if(path.isEmpty()==false && path.charAt(path.length() - 1)=='/')
+            path = path.substring(0, path.length()-1);
+
+        int pos = path.lastIndexOf("/");
+        if(pos>=0)
+            path = path.substring(pos+1);
+
+        if(path.isEmpty()==true)
+            return "/";
+        return path;
+    }
+
+    static public String getPathFromFullpath(String path)
+    {
+        if(path.isEmpty()==false && path.charAt(path.length() - 1)=='/')
+            return path;
+
+        int pos = path.lastIndexOf("/");
+        if(pos>=0)
+            path = path.substring(0, pos);
+
+        if(path.isEmpty()==true)
+            return "/";
+        return path;
     }
 
     static public String integerToIPAddress(int ip)

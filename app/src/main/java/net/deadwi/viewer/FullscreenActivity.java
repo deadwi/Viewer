@@ -67,8 +67,10 @@ public class FullscreenActivity extends AppCompatActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        Bookmark.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
 
         setContentView(R.layout.activity_fullscreen);
+
 
         fileManager = new FileManager();
         fileManager.setShowHiddenFiles(true);
@@ -166,6 +168,13 @@ public class FullscreenActivity extends AppCompatActivity
         hide();
     }
 
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        refreshFileList(false);
+    }
+
     private void handleMessage(Message msg)
     {
         switch (msg.what)
@@ -177,18 +186,28 @@ public class FullscreenActivity extends AppCompatActivity
                 String name = msg.getData().getString("name");
                 if(fileManager.isZipFile(name))
                 {
-                    String fullPath = msg.getData().getString("path");
-                    if(fullPath.endsWith("/")==false)
-                        fullPath += "/";
-                    fullPath += msg.getData().getString("name");
-                    if(viewImage(null, null, fullPath)==false)
+                    String viewName = null;
+                    int viewIndex = 0;
+                    String zipPath = msg.getData().getString("path");
+                    if(zipPath.endsWith("/")==false)
+                        zipPath += "/";
+                    zipPath += msg.getData().getString("name");
+
+                    // load by bookmark
+                    if(msg.getData().containsKey("viewfile"))
+                    {
+                        viewName = msg.getData().getString("viewfile");
+                        viewIndex = msg.getData().getInt("viewindex");
+                    }
+
+                    if(viewImage(null, viewName, zipPath, viewIndex)==false)
                     {
                         Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
                     }
                 }
                 else if(fileManager.isImageFile(name))
                 {
-                    if(viewImage(msg.getData().getString("path"), msg.getData().getString("name"), msg.getData().getString("zipPath"))==false)
+                    if(viewImage(msg.getData().getString("path"), msg.getData().getString("name"), msg.getData().getString("zipPath"), 0)==false)
                     {
                         Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
                     }
@@ -208,15 +227,18 @@ public class FullscreenActivity extends AppCompatActivity
         }
     }
 
-    private boolean viewImage(String path, String name, String zipPath)
+    private boolean viewImage(String path, String name, String zipPath, int viewIndex)
     {
         Intent myIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
         String fullPath = null;
         ArrayList<FileItem> files;
 
-        if(path==null && name==null)
+        if(path==null)
         {
-            myIntent.putExtra("fileindex",0);
+            if(name==null)
+                myIntent.putExtra("fileindex",0);
+            else
+                fullPath = name;
             files = fileManager.getFiles(zipPath);
         }
         else
@@ -247,6 +269,7 @@ public class FullscreenActivity extends AppCompatActivity
         myIntent.putExtra("path", fullPath);
         myIntent.putExtra("zipPath", zipPath);
         myIntent.putExtra("files", pathArray);
+        myIntent.putExtra("viewindex", viewIndex);
 
         startActivity(myIntent);
         overridePendingTransition(0, 0);

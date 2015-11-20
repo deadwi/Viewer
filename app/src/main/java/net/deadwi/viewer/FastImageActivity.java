@@ -25,6 +25,8 @@ import android.widget.Toast;
 import net.deadwi.library.FreeImageWrapper;
 import net.deadwi.library.MinizipWrapper;
 
+import java.io.File;
+
 public class FastImageActivity extends AppCompatActivity
 {
     private FastImage fastView;
@@ -54,6 +56,8 @@ public class FastImageActivity extends AppCompatActivity
             currntFileIndex = getIntent().getIntExtra("fileindex",0);
         else
             currntFileIndex = getFileIndex(path);
+        if(currntFileIndex<0)
+            currntFileIndex = 0;
 
         fastView = new FastImage(this, width, height);
         fastView.setOnTouchListener(new View.OnTouchListener() {
@@ -66,10 +70,8 @@ public class FastImageActivity extends AppCompatActivity
                         previousViewPage();
                     else if (event.getX() > (width / 4 * 3))
                         nextViewPage();
-                    else if (event.getY() < (height / 4)) {
-                        finish();
-                        overridePendingTransition(0, 0);
-                    }
+                    else if (event.getY() < (height / 4))
+                        closeViewPage();
                     /*
                     else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3)) {
                         refreshEink();
@@ -82,7 +84,7 @@ public class FastImageActivity extends AppCompatActivity
 
         setContentView(fastView);
         fastView.startBackgroundLoader();
-        requestImage(currntFileIndex, 0, false);
+        requestImage(currntFileIndex, getIntent().getIntExtra("viewindex",0), false);
     }
 
     @Override
@@ -167,6 +169,25 @@ public class FastImageActivity extends AppCompatActivity
         }
         else
             previousPage();
+    }
+
+    private void closeViewPage()
+    {
+        if(zipPath!=null)
+        {
+            String dir = FileManager.getPathFromFullpath(zipPath);
+            BookmarkItem item = new BookmarkItem();
+            item.filename = FileManager.getNameFromFullpath(zipPath);
+            item.innerName = (currntFileIndex>=0 && currntFileIndex < files.length - 1) ? files[currntFileIndex] : "";
+            item.fileIndex = currntFileIndex<0 ? 0 : currntFileIndex;
+            item.fileCount = files.length;
+            item.viewIndex = fastView.getCurrent().viewIndex;
+            Bookmark.getInstance().updateBookmark(dir, item);
+        }
+
+
+        finish();
+        overridePendingTransition(0, 0);
     }
 
     private void requestImage(int fileIndex, int viewIndex, boolean isPrev)

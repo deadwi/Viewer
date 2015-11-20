@@ -24,6 +24,7 @@ import android.widget.Toast;
 public class CustomAdapter extends BaseAdapter
 {
     private ArrayList<FileItem> list;
+    private ArrayList<BookmarkItem> bookmarkList;
     private FileManager fileManager;
     private Handler handler;
 
@@ -104,7 +105,12 @@ public class CustomAdapter extends BaseAdapter
         else
         {
             textHead.setText("F");
-            textInfo.setText(FileManager.getFileSizeText(list.get(position).size));
+
+            String info = FileManager.getFileSizeText(list.get(position).size);
+            BookmarkItem mark = Bookmark.getBookmark(bookmarkList, list.get(position).name);
+            if(mark!=null)
+                info += " Read on " + mark.lastReadDate + " [" + mark.fileIndex + "/" + mark.fileCount + "]";
+            textInfo.setText(info);
         }
 
         convertView.setOnClickListener(new OnClickListener() {
@@ -124,11 +130,17 @@ public class CustomAdapter extends BaseAdapter
                 }
                 else
                 {
+                    BookmarkItem mark = Bookmark.getBookmark(bookmarkList, item.name);
                     Message msg = Message.obtain();
                     Bundle data = new Bundle();
                     data.putString("path", item.path);
                     data.putString("name", item.name);
                     data.putString("zipPath", item.zipPath);
+                    if(mark!=null)
+                    {
+                        data.putString("viewfile", mark.innerName);
+                        data.putInt("viewindex", mark.viewIndex);
+                    }
 
                     msg.setData(data);
                     msg.what = FullscreenActivity.EVENT_VIEW_FILE;
@@ -176,6 +188,7 @@ public class CustomAdapter extends BaseAdapter
             list = fileManager.getCurrentFiles();
         else
             list = fileManager.getMatchFiles(keyword);
+        bookmarkList = Bookmark.getInstance().loadBookmark( fileManager.getCurrentDir() );
     }
 }
 

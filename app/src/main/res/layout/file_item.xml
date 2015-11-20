@@ -36,7 +36,8 @@
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp"
                 android:height="30dp"
-                android:text="filename" />
+                android:text="filename"
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/textInfo"
