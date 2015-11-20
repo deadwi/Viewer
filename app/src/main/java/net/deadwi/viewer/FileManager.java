@@ -30,10 +30,11 @@ public class FileManager
     public static final int SORT_ALPHA = 1;
     public static final int SORT_TYPE = 2;
     public static final int SORT_SIZE = 3;
+    public static final int SORT_ALPHA_WITH_NUM = 4;
     private static final int BUFFER = 1024*4;
 
     private boolean isShowHiddenFiles = false;
-    private int sortType = SORT_ALPHA;
+    private int sortType = SORT_ALPHA_WITH_NUM;
     private String currentPath;
     private String innerPath;
     private ArrayList<FileItem> recentFiles;
@@ -47,6 +48,11 @@ public class FileManager
     public String getCurrentDir()
     {
         return currentPath;
+    }
+
+    public String getCurrentInnerDir()
+    {
+        return innerPath;
     }
 
     public String getCurrentName()
@@ -156,6 +162,15 @@ public class FileManager
         return String.format("%.1fG", size / 1024.0 / 1024.0 / 1024.0);
     }
 
+    public static String getFullPath(String path, String name)
+    {
+        String fullPath = path;
+        if(fullPath.endsWith("/")==false)
+            fullPath += "/";
+        fullPath += name;
+        return fullPath;
+    }
+
     static public String getNameFromFullpath(String path)
     {
         if(path.isEmpty()==false && path.charAt(path.length() - 1)=='/')
@@ -183,54 +198,6 @@ public class FileManager
         return path;
     }
 
-    static public int copyToDirectory(String old, String newDir)
-    {
-        File old_file = new File(old);
-        File temp_dir = new File(newDir);
-        byte[] data = new byte[BUFFER];
-        int read = 0;
-
-        if(old_file.isFile() && temp_dir.isDirectory() && temp_dir.canWrite()){
-            String file_name = old.substring(old.lastIndexOf("/"), old.length());
-            File cp_file = new File(newDir + file_name);
-
-            try {
-                BufferedOutputStream o_stream = new BufferedOutputStream(
-                        new FileOutputStream(cp_file));
-                BufferedInputStream i_stream = new BufferedInputStream(
-                        new FileInputStream(old_file));
-
-                while((read = i_stream.read(data, 0, BUFFER)) != -1)
-                    o_stream.write(data, 0, read);
-
-                o_stream.flush();
-                i_stream.close();
-                o_stream.close();
-
-            } catch (FileNotFoundException e) {
-                Log.e("FileNotFoundException", e.getMessage());
-                return -1;
-
-            } catch (IOException e) {
-                Log.e("IOException", e.getMessage());
-                return -1;
-            }
-
-        }else if(old_file.isDirectory() && temp_dir.isDirectory() && temp_dir.canWrite()) {
-            String files[] = old_file.list();
-            String dir = newDir + old.substring(old.lastIndexOf("/"), old.length());
-
-            if(!new File(dir).mkdir())
-                return -1;
-            for (String file : files)
-                copyToDirectory(old + "/" + file, dir);
-
-        } else if(!temp_dir.canWrite())
-            return -1;
-
-        return 0;
-    }
-
     static public boolean isZipFile(String path)
     {
         return path.toLowerCase().endsWith(".zip");
@@ -249,14 +216,22 @@ public class FileManager
         ArrayList<FileItem> fileList = (ArrayList<FileItem>)MinizipWrapper.getFilenamesInZip(zipFile);
         if(innerPath==null)
             return fileList;
+        String innerPathPrefix = innerPath + "/";
 
         Log.d("ZIP", "innerPath = "+innerPath);
         ArrayList<FileItem> newList = new ArrayList<FileItem>();
         for(FileItem item : fileList)
         {
-            Log.d("ZIP",item.path+" "+item.name);
             if(item.path.compareTo(innerPath)==0)
                 newList.add(item);
+            // two level dir not exist in file list
+            else if(item.path.startsWith(innerPathPrefix))
+            {
+                int pos = item.path.indexOf("/",innerPathPrefix.length());
+                String newPath = item.path.substring(0, pos < 0 ? item.path.length() : pos);
+                if(newList.isEmpty()==true || newList.get(newList.size()-1).getFullPath().compareTo(newPath)!=0)
+                    newList.add( new FileItem(item.zipPath, newPath+"/", 0) );
+            }
         }
         return newList;
     }
@@ -316,6 +291,10 @@ public class FileManager
 
             case SORT_TYPE:
                 Collections.sort(fileList, FileItem.CompareFileType);
+                break;
+
+            case SORT_ALPHA_WITH_NUM:
+                Collections.sort(fileList, FileItem.CompareAlphIgnoreCaseWithNumber);
                 break;
         }
     }

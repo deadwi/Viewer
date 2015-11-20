@@ -1,5 +1,7 @@
 package net.deadwi.viewer;
 
+import android.util.Log;
+
 import java.io.File;
 import java.util.Comparator;
 
@@ -53,16 +55,7 @@ public class FileItem
 
     public String getFullPath()
     {
-        return getFullPath(path,name);
-    }
-
-    public static String getFullPath(String path, String name)
-    {
-        String fullPath = path;
-        if(fullPath.endsWith("/")==false)
-            fullPath += "/";
-        fullPath += name;
-        return fullPath;
+        return FileManager.getFullPath(path,name);
     }
 
     private static int compareDir(FileItem lhs, FileItem rhs)
@@ -70,6 +63,47 @@ public class FileItem
         if(lhs.type==rhs.type)
             return 0;
         return lhs.type<rhs.type ? -1 : 1;
+    }
+
+    private static int getIntFromString(String text,int start)
+    {
+        int i=start;
+        for(;i<text.length();i++)
+        {
+            if(Character.isDigit(text.charAt(i))==false)
+                break;
+        }
+        return Integer.parseInt(text.substring(start, i));
+    }
+
+    private static int compareNameWithNumber(String lhs, String rhs)
+    {
+        int i=0;
+        int startNum=-1;
+        int length = Math.min(lhs.length(),rhs.length());
+        for(;i<length;i++)
+        {
+            if(startNum==-1 && Character.isDigit(lhs.charAt(i)) && Character.isDigit(rhs.charAt(i)))
+                startNum = i;
+            else if(lhs.charAt(i)==rhs.charAt(i))
+                startNum = -1;
+            if(lhs.charAt(i)!=rhs.charAt(i))
+                break;
+        }
+        if(i==length || startNum==-1)
+            return lhs.compareTo(rhs);
+
+        try
+        {
+            int lhsInt = getIntFromString(lhs, startNum);
+            int rhsInt = getIntFromString(rhs, startNum);
+            if(lhsInt!=rhsInt)
+                return lhsInt<rhsInt ? -1 : 1;
+        }
+        catch (NumberFormatException ex)
+        {
+        }
+        return lhs.compareTo(rhs);
     }
 
     public static final Comparator CompareAlphIgnoreCase = new Comparator<FileItem>()
@@ -82,6 +116,21 @@ public class FileItem
                 return c;
 
             return lhs.name.toLowerCase().compareTo(rhs.name.toLowerCase());
+        }
+    };
+
+    public static final Comparator CompareAlphIgnoreCaseWithNumber = new Comparator<FileItem>()
+    {
+        @Override
+        public int compare(FileItem lhs, FileItem rhs)
+        {
+            int c = compareDir(lhs,rhs);
+            if(c!=0)
+                return c;
+            c = compareNameWithNumber(lhs.path.toLowerCase(), rhs.path.toLowerCase());
+            if(c!=0)
+                return c;
+            return compareNameWithNumber(lhs.name.toLowerCase(), rhs.name.toLowerCase());
         }
     };
 

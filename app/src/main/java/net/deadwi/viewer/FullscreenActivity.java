@@ -74,7 +74,7 @@ public class FullscreenActivity extends AppCompatActivity
 
         fileManager = new FileManager();
         fileManager.setShowHiddenFiles(true);
-        fileManager.setSortType(FileManager.SORT_ALPHA);
+        fileManager.setSortType(FileManager.SORT_ALPHA_WITH_NUM);
 
         currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
         fileListAdapter = new CustomAdapter(fileManager, handler);
@@ -216,12 +216,10 @@ public class FullscreenActivity extends AppCompatActivity
             case EVENT_OPEN_FILE:
                 if(msg.getData().getString("zipPath")!=null)
                 {
-                    String fullPath = msg.getData().getString("path");
-                    if(fullPath.endsWith("/")==false)
-                        fullPath += "/";
-                    fullPath += msg.getData().getString("name");
+                    String fullPath = FileManager.getFullPath( msg.getData().getString("path"), msg.getData().getString("name") );
                     if(fullPath.charAt(0)=='/')
                         fullPath = fullPath.substring(1);
+                    Log.d("Main","Open : "+fullPath);
                     fileManager.setCurrentDirInZip(msg.getData().getString("zipPath"), fullPath);
                     refreshFileList(true);
                 }
@@ -254,7 +252,7 @@ public class FullscreenActivity extends AppCompatActivity
         }
         else
         {
-            fullPath = FileItem.getFullPath(path,name);
+            fullPath = FileManager.getFullPath(path,name);
             files = fileManager.getRecentFiles();
         }
 
