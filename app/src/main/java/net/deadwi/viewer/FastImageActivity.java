@@ -280,10 +280,10 @@ class ViewLocation
 @SuppressLint("ViewConstructor")
 class FastImage extends View implements Runnable
 {
-    static private boolean isBitmap1Out = true;
-    static private Object lock = new Object();
-    static private Bitmap mBitmap1;
-    static private Bitmap mBitmap2;
+    private boolean isBitmap1Out = true;
+    private Object lock = new Object();
+    private Bitmap mBitmap1;
+    private Bitmap mBitmap2;
 
     private boolean isThreadRun = false;
     private Thread loaderThread;

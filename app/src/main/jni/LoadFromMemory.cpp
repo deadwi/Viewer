@@ -217,7 +217,6 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
     FreeImage_Unload(rescaled);
 
-    FreeImage_GetPitch(dib565);
     fill_pixels(&info, pixels, make565(255,255,255));
     copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);
 
@@ -385,7 +384,6 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
     FreeImage_Unload(rescaled);
 
-    FreeImage_GetPitch(dib565);
     fill_pixels(&info, pixels, make565(255,255,255));
     copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);
 
@@ -500,6 +498,14 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
                 }
             }
         }
+        else
+        {
+            LOGI("Get data from zip fail : code=%d",ret);
+        }
+    }
+    else
+    {
+        LOGI("Get data size from zip fail : code=%d",dataSize);
     }
 
     // Release memory

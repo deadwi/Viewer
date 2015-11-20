@@ -77,7 +77,10 @@ int getFileData(const char* zipFilename, const char* innerFilename, jbyte* byteD
     int ret;
     ret = unzGoToFirstFile(uf);
     if(ret != UNZ_OK)
+    {
+        unzClose(uf);
         return ERROR_ZIP_FILE_NOT_FOUND;
+    }
 
     int status=0;
     unz_file_info64 file_info = { 0 };
@@ -121,11 +124,14 @@ int getFileData(const char* zipFilename, const char* innerFilename, jbyte* byteD
                 if(readSize<=0)
                     break;
             }
+            unzCloseCurrentFile(uf);
         }
         else
             status = ERROR_ZIP_FILE_SIZE_0;
         break;
     }
+
+    unzClose(uf);
     return  status;
 }
 
@@ -145,7 +151,10 @@ JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZ
     int ret;
     ret = unzGoToFirstFile(uf);
     if(ret != UNZ_OK)
+    {
+        unzClose(uf);
         return NULL;
+    }
 
     jclass classArrayList = env->FindClass("java/util/ArrayList");
     jclass classFileItem = env->FindClass("net/deadwi/viewer/FileItem");
@@ -173,6 +182,7 @@ JNIEXPORT jobject JNICALL Java_net_deadwi_library_MinizipWrapper_getFilenamesInZ
             break;
     }
 
+    unzClose(uf);
     return listObj;
 }
 
