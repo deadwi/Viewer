@@ -214,7 +214,18 @@ public class FullscreenActivity extends AppCompatActivity
                 }
                 break;
             case EVENT_OPEN_FILE:
-                if(fileManager.isZipFile(msg.getData().getString("name")))
+                if(msg.getData().getString("zipPath")!=null)
+                {
+                    String fullPath = msg.getData().getString("path");
+                    if(fullPath.endsWith("/")==false)
+                        fullPath += "/";
+                    fullPath += msg.getData().getString("name");
+                    if(fullPath.charAt(0)=='/')
+                        fullPath = fullPath.substring(1);
+                    fileManager.setCurrentDirInZip(msg.getData().getString("zipPath"), fullPath);
+                    refreshFileList(true);
+                }
+                else if(fileManager.isZipFile(msg.getData().getString("name")))
                 {
                     String fullPath = msg.getData().getString("path");
                     if(fullPath.endsWith("/")==false)

@@ -175,7 +175,7 @@ public class FastImageActivity extends AppCompatActivity
     {
         if(zipPath!=null)
         {
-            String dir = FileManager.getPathFromFullpath(zipPath);
+            String dir = FileManager.getPathFromFullpath(zipPath, "/");
             BookmarkItem item = new BookmarkItem();
             item.filename = FileManager.getNameFromFullpath(zipPath);
             item.innerName = (currntFileIndex>=0 && currntFileIndex < files.length - 1) ? files[currntFileIndex] : "";

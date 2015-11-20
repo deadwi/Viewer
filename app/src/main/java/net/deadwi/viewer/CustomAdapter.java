@@ -127,6 +127,15 @@ public class CustomAdapter extends BaseAdapter
                 }
                 else if(item.type == FileItem.TYPE_DIR_IN_ZIP)
                 {
+                    Message msg = Message.obtain();
+                    Bundle data = new Bundle();
+                    data.putString("path", item.path);
+                    data.putString("name", item.name);
+                    data.putString("zipPath", item.zipPath);
+
+                    msg.setData(data);
+                    msg.what = FullscreenActivity.EVENT_OPEN_FILE;
+                    handler.sendMessage(msg);
                 }
                 else
                 {
