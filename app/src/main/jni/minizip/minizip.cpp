@@ -18,8 +18,14 @@
 #define MKDIR(d) mkdir(d, 0775)
 
 #define  LOG_TAG    "libminizip"
+#ifdef NDEBUG
+#define  LOGI(...)
+#define  LOGE(...)
+#else
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#endif
+
 
 const int WRITE_BUFFER_SIZE = 16384;
 const int READ_BUFFER_SIZE = 1024*4;

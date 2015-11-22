@@ -172,6 +172,10 @@ public class FullscreenActivity extends AppCompatActivity
     protected void onResume()
     {
         super.onResume();
+        if(Option.getInstance().IsPortrait())
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        else
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         refreshFileList(false);
     }
 

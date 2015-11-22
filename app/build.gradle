@@ -36,10 +36,7 @@ model {
             minifyEnabled = false
         }
         release {
-            //ndk.cppFlags += "-o2"
-            //ndk.CFlags += "-o2"
-
-            minifyEnabled = true
+            minifyEnabled = false
             proguardFiles += file('proguard-rules.pro')
 
             println(proguardFiles)
