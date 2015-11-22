@@ -40,7 +40,7 @@ model {
             //ndk.CFlags += "-o2"
 
             minifyEnabled = true
-            proguardFiles += file('proguard-rules.txt')
+            proguardFiles += file('proguard-rules.pro')
 
             println(proguardFiles)
         }

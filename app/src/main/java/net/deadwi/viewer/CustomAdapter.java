@@ -109,7 +109,7 @@ public class CustomAdapter extends BaseAdapter
             String info = FileManager.getFileSizeText(list.get(position).size);
             BookmarkItem mark = Bookmark.getBookmark(bookmarkList, list.get(position).name);
             if(mark!=null)
-                info += " Read on " + mark.lastReadDate + " [" + mark.fileIndex + "/" + mark.fileCount + "]";
+                info += " Read on " + mark.lastReadDate + " [" + (mark.fileIndex+1) + "/" + mark.fileCount + "]";
             textInfo.setText(info);
         }
 

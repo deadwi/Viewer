@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Viewer</string>
+    <string name="app_name">Fast Viewer</string>
 
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -14,4 +14,7 @@
     <string name="BUTTON_OK">OK</string>
     <string name="BUTTON_CANCEL">Cancel</string>
     <string name="MESSAGE_NO_IMAGE">이미지가 없습니다</string>
+    <string name="BUTTON_LIST">LIST</string>
+    <string name="BUTTON_PREV">PREV</string>
+    <string name="BUTTON_NEXT">NEXT</string>
 </resources>

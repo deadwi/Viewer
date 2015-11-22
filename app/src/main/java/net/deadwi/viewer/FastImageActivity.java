@@ -2,10 +2,13 @@ package net.deadwi.viewer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.content.Context;
@@ -14,12 +17,16 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.view.Display;
+import android.view.Window;
 import android.view.WindowManager;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import net.deadwi.library.FreeImageWrapper;
@@ -35,15 +42,15 @@ public class FastImageActivity extends AppCompatActivity
     private String zipPath;
     private String[] files;
     private int currntFileIndex;
+    private Dialog pageControl;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        createPageControl();
 
         FreeImageWrapper.init();
-        //width = getWindowManager().getDefaultDisplay().getWidth();
-        //height = getWindowManager().getDefaultDisplay().getHeight();
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
         width = dm.widthPixels;
         height = dm.heightPixels;
@@ -59,6 +66,12 @@ public class FastImageActivity extends AppCompatActivity
         if(currntFileIndex<0)
             currntFileIndex = 0;
 
+        // page control
+        if(zipPath!=null)
+            setPageControlTitle( FileManager.getNameFromFullpath(zipPath) );
+        else
+            setPageControlTitle( FileManager.getNameFromFullpath( FileManager.getPathFromFullpath(path,"/root") ) );
+
         fastView = new FastImage(this, width, height);
         fastView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -72,6 +85,11 @@ public class FastImageActivity extends AppCompatActivity
                         nextViewPage();
                     else if (event.getY() < (height / 4))
                         closeViewPage();
+                    else if (event.getY() > (height / 4 * 3))
+                    {
+                        setPageControlPage(currntFileIndex, files.length);
+                        pageControl.show();
+                    }
                     /*
                     else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3)) {
                         refreshEink();
@@ -104,6 +122,67 @@ public class FastImageActivity extends AppCompatActivity
         if (actionBar != null)
             actionBar.hide();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    }
+
+    private void createPageControl()
+    {
+        pageControl = new Dialog(this);
+        pageControl.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        pageControl.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        pageControl.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        pageControl.getWindow().setGravity(Gravity.BOTTOM);
+        pageControl.setContentView(R.layout.activity_page_control);
+        pageControl.findViewById(R.id.buttonOption).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent myIntent = new Intent(FastImageActivity.this, OptionActivity.class);
+                startActivity(myIntent);
+                overridePendingTransition(0, 0);
+            }
+        });
+        pageControl.findViewById(R.id.buttonList).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                pageControl.dismiss();
+                closeViewPage();
+            }
+        });
+        ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+            {
+                currntFileIndex = progress;
+                setPageControlPage(progress, files.length);
+                requestImage(currntFileIndex, 0, false);
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar)
+            {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar)
+            {
+            }
+        });
+
+
+        //pageControl.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL , WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+
+        WindowManager.LayoutParams params = pageControl.getWindow().getAttributes();
+        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+        pageControl.getWindow().setAttributes(params);
+    }
+
+    private void setPageControlTitle(String title)
+    {
+        ((TextView)pageControl.findViewById(R.id.textTitle)).setText(title);
+    }
+
+    private void setPageControlPage(int page,int pageCount)
+    {
+        ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setMax(pageCount-1);
+        ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setProgress(page);
+        ((TextView)pageControl.findViewById(R.id.textPage)).setText((page+1) + "/" + pageCount);
     }
 
     private int getFileIndex(String path)
@@ -178,13 +257,12 @@ public class FastImageActivity extends AppCompatActivity
             String dir = FileManager.getPathFromFullpath(zipPath, "/");
             BookmarkItem item = new BookmarkItem();
             item.filename = FileManager.getNameFromFullpath(zipPath);
-            item.innerName = (currntFileIndex>=0 && currntFileIndex < files.length - 1) ? files[currntFileIndex] : "";
+            item.innerName = (currntFileIndex>=0 && currntFileIndex <= files.length - 1) ? files[currntFileIndex] : "";
             item.fileIndex = currntFileIndex<0 ? 0 : currntFileIndex;
             item.fileCount = files.length;
             item.viewIndex = fastView.getCurrent().viewIndex;
             Bookmark.getInstance().updateBookmark(dir, item);
         }
-
 
         finish();
         overridePendingTransition(0, 0);
