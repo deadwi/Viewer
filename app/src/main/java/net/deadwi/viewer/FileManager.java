@@ -207,7 +207,9 @@ public class FileManager
         String lowerString = path.toLowerCase();
 
         return lowerString.endsWith(".jpg") ||
+                lowerString.endsWith(".jpeg") ||
                 lowerString.endsWith(".png") ||
+                lowerString.endsWith(".bmp") ||
                 lowerString.endsWith(".gif");
     }
 
