@@ -120,18 +120,20 @@ public class CustomAdapter extends BaseAdapter
                 FileItem item = list.get(pos);
                 if(item.type == FileItem.TYPE_DIR)
                 {
-                    fileManager.moveNextDir(item.name);
                     Message msg = Message.obtain();
-                    msg.what = FullscreenActivity.EVENT_UPDATE_FILE_LIST;
+                    Bundle data = new Bundle();
+                    data.putString(FullscreenActivity.MSG_DATA_NAME, item.name);
+                    msg.setData(data);
+                    msg.what = FullscreenActivity.EVENT_NEXT_PATH;
                     handler.sendMessage(msg);
                 }
                 else if(item.type == FileItem.TYPE_DIR_IN_ZIP)
                 {
                     Message msg = Message.obtain();
                     Bundle data = new Bundle();
-                    data.putString("path", item.path);
-                    data.putString("name", item.name);
-                    data.putString("zipPath", item.zipPath);
+                    data.putString(FullscreenActivity.MSG_DATA_PATH, item.path);
+                    data.putString(FullscreenActivity.MSG_DATA_NAME, item.name);
+                    data.putString(FullscreenActivity.MSG_DATA_ZIP_PATH, item.zipPath);
 
                     msg.setData(data);
                     msg.what = FullscreenActivity.EVENT_OPEN_FILE;
@@ -142,13 +144,13 @@ public class CustomAdapter extends BaseAdapter
                     BookmarkItem mark = Bookmark.getBookmark(bookmarkList, item.name);
                     Message msg = Message.obtain();
                     Bundle data = new Bundle();
-                    data.putString("path", item.path);
-                    data.putString("name", item.name);
-                    data.putString("zipPath", item.zipPath);
+                    data.putString(FullscreenActivity.MSG_DATA_PATH, item.path);
+                    data.putString(FullscreenActivity.MSG_DATA_NAME, item.name);
+                    data.putString(FullscreenActivity.MSG_DATA_ZIP_PATH, item.zipPath);
                     if(mark!=null)
                     {
-                        data.putString("viewfile", mark.innerName);
-                        data.putInt("viewindex", mark.viewIndex);
+                        data.putString(FullscreenActivity.MSG_DATA_VIEW_FILE, mark.innerName);
+                        data.putInt(FullscreenActivity.MSG_DATA_VIEW_INDEX, mark.viewIndex);
                     }
 
                     msg.setData(data);
@@ -167,9 +169,9 @@ public class CustomAdapter extends BaseAdapter
                 {
                     Message msg = Message.obtain();
                     Bundle data = new Bundle();
-                    data.putString("path", item.path);
-                    data.putString("name", item.name);
-                    data.putString("zipPath", item.zipPath);
+                    data.putString(FullscreenActivity.MSG_DATA_PATH, item.path);
+                    data.putString(FullscreenActivity.MSG_DATA_NAME, item.name);
+                    data.putString(FullscreenActivity.MSG_DATA_ZIP_PATH, item.zipPath);
 
                     msg.setData(data);
                     msg.what = FullscreenActivity.EVENT_OPEN_FILE;

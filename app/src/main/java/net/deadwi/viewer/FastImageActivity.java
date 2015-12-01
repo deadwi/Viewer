@@ -56,12 +56,10 @@ public class FastImageActivity extends AppCompatActivity
         height = dm.heightPixels;
         Log.d("FASTIMAGE","Display : "+width+"x"+height);
 
-        String path = getIntent().getStringExtra("path");
-        zipPath = getIntent().getStringExtra("zipPath");
-        files = getIntent().getStringArrayExtra("files");
-        if(path==null)
-            currntFileIndex = getIntent().getIntExtra("fileindex",0);
-        else
+        String path = getIntent().getStringExtra(FullscreenActivity.MSG_DATA_PATH);
+        zipPath = getIntent().getStringExtra(FullscreenActivity.MSG_DATA_ZIP_PATH);
+        files = getIntent().getStringArrayExtra(FullscreenActivity.MSG_DATA_FILES);
+        if(path!=null)
             currntFileIndex = getFileIndex(path);
         if(currntFileIndex<0)
             currntFileIndex = 0;
@@ -263,6 +261,8 @@ public class FastImageActivity extends AppCompatActivity
             item.viewIndex = fastView.getCurrent().viewIndex;
             Bookmark.getInstance().updateBookmark(dir, item);
         }
+        Option.getInstance().setLastView(null,null,0);
+        Option.getInstance().saveLastView();
 
         finish();
         overridePendingTransition(0, 0);
@@ -279,6 +279,9 @@ public class FastImageActivity extends AppCompatActivity
                 +(viewIndex + 1) + "/" + fastView.getCurrent().getAllViewCount()
                 +(isPrev ? " LAST" : "")+")");
         fastView.drawImageFromZipPath(zipPath, path, isPrev, viewIndex, prepareFilePath);
+
+        Option.getInstance().setLastView(zipPath, path, viewIndex);
+        Option.getInstance().saveLastView();
     }
 
     private void refreshEink()

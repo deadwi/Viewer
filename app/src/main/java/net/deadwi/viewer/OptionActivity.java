@@ -143,6 +143,8 @@ public class OptionActivity  extends AppCompatActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        Option.getInstance().saveOption();
     }
 
     private void hide()

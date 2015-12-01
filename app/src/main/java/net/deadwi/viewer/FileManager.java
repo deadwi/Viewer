@@ -70,6 +70,14 @@ public class FileManager
     {
         currentPath = zipPath;
         innerPath = path;
+
+        if(currentPath==null || isExist(zipPath)==false)
+        {
+            currentPath = "/";
+            innerPath = "";
+        }
+        if(innerPath==null)
+            innerPath = "";
     }
 
     public void setShowHiddenFiles(boolean choice)
@@ -149,6 +157,11 @@ public class FileManager
     static public boolean isDirectory(String path)
     {
         return new File(path).isDirectory();
+    }
+
+    static public boolean isExist(String path)
+    {
+        return new File(path).exists();
     }
 
     static public String getFileSizeText(long size)

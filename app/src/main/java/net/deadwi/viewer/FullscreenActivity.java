@@ -33,8 +33,15 @@ import java.util.ArrayList;
 public class FullscreenActivity extends AppCompatActivity
 {
     public static final int EVENT_UPDATE_FILE_LIST = 1001;
-    public static final int EVENT_VIEW_FILE = 1002;
-    public static final int EVENT_OPEN_FILE = 1003;
+    public static final int EVENT_NEXT_PATH = 1002;
+    public static final int EVENT_VIEW_FILE = 1003;
+    public static final int EVENT_OPEN_FILE = 1004;
+    public static final String MSG_DATA_NAME = "name";
+    public static final String MSG_DATA_PATH = "path";
+    public static final String MSG_DATA_ZIP_PATH = "zip_path";
+    public static final String MSG_DATA_VIEW_FILE = "view_file";
+    public static final String MSG_DATA_VIEW_INDEX = "view_index";
+    public static final String MSG_DATA_FILES = "files";
 
     private FileManager fileManager;
     private TextView currentNameTextView;
@@ -63,6 +70,8 @@ public class FullscreenActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        Option.getInstance().loadOption( getFilesDir().getAbsolutePath() );
         if(Option.getInstance().IsPortrait())
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else
@@ -71,10 +80,12 @@ public class FullscreenActivity extends AppCompatActivity
 
         setContentView(R.layout.activity_fullscreen);
 
-
         fileManager = new FileManager();
         fileManager.setShowHiddenFiles(true);
         fileManager.setSortType(FileManager.SORT_ALPHA_WITH_NUM);
+        // last path
+        fileManager.setCurrentDirInZip(Option.getInstance().getLastCurrentPath(), Option.getInstance().getLastInnerPath());
+        Log.d("MAIN", "last path : " + (Option.getInstance().getLastCurrentPath()!=null ? Option.getInstance().getLastCurrentPath() : "NULL"));
 
         currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
         fileListAdapter = new CustomAdapter(fileManager, handler);
@@ -158,6 +169,8 @@ public class FullscreenActivity extends AppCompatActivity
                 return false;
             }
         });
+
+        viewLastImage();
     }
 
     @Override
@@ -186,22 +199,26 @@ public class FullscreenActivity extends AppCompatActivity
             case EVENT_UPDATE_FILE_LIST:
                 refreshFileList(true);
                 break;
+            case EVENT_NEXT_PATH:
+                fileManager.moveNextDir(msg.getData().getString(MSG_DATA_NAME));
+                refreshFileList(true);
+                break;
             case EVENT_VIEW_FILE:
-                String name = msg.getData().getString("name");
+                String name = msg.getData().getString(MSG_DATA_NAME);
                 if(fileManager.isZipFile(name))
                 {
                     String viewName = null;
                     int viewIndex = 0;
-                    String zipPath = msg.getData().getString("path");
+                    String zipPath = msg.getData().getString(MSG_DATA_PATH);
                     if(zipPath.endsWith("/")==false)
                         zipPath += "/";
-                    zipPath += msg.getData().getString("name");
+                    zipPath += msg.getData().getString(MSG_DATA_NAME);
 
                     // load by bookmark
-                    if(msg.getData().containsKey("viewfile"))
+                    if(msg.getData().containsKey(MSG_DATA_VIEW_FILE))
                     {
-                        viewName = msg.getData().getString("viewfile");
-                        viewIndex = msg.getData().getInt("viewindex");
+                        viewName = msg.getData().getString(MSG_DATA_VIEW_FILE);
+                        viewIndex = msg.getData().getInt(MSG_DATA_VIEW_INDEX);
                     }
 
                     if(viewImage(null, viewName, zipPath, viewIndex)==false)
@@ -211,33 +228,59 @@ public class FullscreenActivity extends AppCompatActivity
                 }
                 else if(fileManager.isImageFile(name))
                 {
-                    if(viewImage(msg.getData().getString("path"), msg.getData().getString("name"), msg.getData().getString("zipPath"), 0)==false)
+                    if(viewImage(msg.getData().getString(MSG_DATA_PATH), msg.getData().getString(MSG_DATA_NAME), msg.getData().getString(MSG_DATA_ZIP_PATH), 0)==false)
                     {
                         Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
                     }
                 }
                 break;
             case EVENT_OPEN_FILE:
-                if(msg.getData().getString("zipPath")!=null)
+                if(msg.getData().getString(MSG_DATA_ZIP_PATH)!=null)
                 {
-                    String fullPath = FileManager.getFullPath( msg.getData().getString("path"), msg.getData().getString("name") );
+                    String fullPath = FileManager.getFullPath( msg.getData().getString(MSG_DATA_PATH), msg.getData().getString(MSG_DATA_NAME) );
                     if(fullPath.charAt(0)=='/')
                         fullPath = fullPath.substring(1);
                     Log.d("Main","Open : "+fullPath);
-                    fileManager.setCurrentDirInZip(msg.getData().getString("zipPath"), fullPath);
+                    fileManager.setCurrentDirInZip(msg.getData().getString(MSG_DATA_ZIP_PATH), fullPath);
                     refreshFileList(true);
                 }
-                else if(fileManager.isZipFile(msg.getData().getString("name")))
+                else if(fileManager.isZipFile(msg.getData().getString(MSG_DATA_NAME)))
                 {
-                    String fullPath = msg.getData().getString("path");
+                    String fullPath = msg.getData().getString(MSG_DATA_PATH);
                     if(fullPath.endsWith("/")==false)
                         fullPath += "/";
-                    fullPath += msg.getData().getString("name");
+                    fullPath += msg.getData().getString(MSG_DATA_NAME);
                     fileManager.setCurrentDir(fullPath);
                     refreshFileList(true);
                 }
                 break;
         }
+    }
+
+    private void viewLastImage()
+    {
+        String viewPath = Option.getInstance().getLastViewPath();
+        String zipPath = Option.getInstance().getLastViewZipPath();
+        if(viewPath==null)
+            return;
+
+        Message msg = Message.obtain();
+        Bundle data = new Bundle();
+        if(zipPath==null)
+        {
+            data.putString(FullscreenActivity.MSG_DATA_PATH, FileManager.getPathFromFullpath(viewPath, "/"));
+            data.putString(FullscreenActivity.MSG_DATA_NAME, FileManager.getNameFromFullpath(viewPath));
+        }
+        else
+        {
+            data.putString(FullscreenActivity.MSG_DATA_PATH, FileManager.getPathFromFullpath(zipPath, "/"));
+            data.putString(FullscreenActivity.MSG_DATA_NAME, FileManager.getNameFromFullpath(zipPath));
+            data.putString(FullscreenActivity.MSG_DATA_VIEW_FILE, viewPath );
+            data.putInt(FullscreenActivity.MSG_DATA_VIEW_INDEX, Option.getInstance().getLastViewIndex() );
+        }
+        msg.setData(data);
+        msg.what = FullscreenActivity.EVENT_VIEW_FILE;
+        handler.sendMessage(msg);
     }
 
     private boolean viewImage(String path, String name, String zipPath, int viewIndex)
@@ -248,9 +291,7 @@ public class FullscreenActivity extends AppCompatActivity
 
         if(path==null)
         {
-            if(name==null)
-                myIntent.putExtra("fileindex",0);
-            else
+            if(name!=null)
                 fullPath = name;
             files = fileManager.getFiles(zipPath);
         }
@@ -279,10 +320,10 @@ public class FullscreenActivity extends AppCompatActivity
             i++;
         }
 
-        myIntent.putExtra("path", fullPath);
-        myIntent.putExtra("zipPath", zipPath);
-        myIntent.putExtra("files", pathArray);
-        myIntent.putExtra("viewindex", viewIndex);
+        myIntent.putExtra(MSG_DATA_PATH, fullPath);
+        myIntent.putExtra(MSG_DATA_ZIP_PATH, zipPath);
+        myIntent.putExtra(MSG_DATA_FILES, pathArray);
+        myIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
 
         startActivity(myIntent);
         overridePendingTransition(0, 0);
@@ -315,9 +356,12 @@ public class FullscreenActivity extends AppCompatActivity
             search.setText("");
 
         hideKeyboard();
-        currentNameTextView.setText( fileManager.getCurrentName() );
+        currentNameTextView.setText(fileManager.getCurrentName());
         fileListAdapter.updateFileList(search.getText().toString());
         fileListAdapter.notifyDataSetChanged();
         fileListView.setSelectionAfterHeaderView();
+
+        Option.getInstance().setLastPath(fileManager.getCurrentDir(), fileManager.getCurrentInnerDir());
+        Option.getInstance().saveLastPath();
     }
 }
