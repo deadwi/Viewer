@@ -190,6 +190,7 @@ public class FullscreenActivity extends AppCompatActivity
         else
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         refreshFileList(false);
+        Option.getInstance().setChanged(false);
     }
 
     private void handleMessage(Message msg)

@@ -1,5 +1,8 @@
 package net.deadwi.viewer;
 
+import net.deadwi.library.FreeImageWrapper;
+import net.deadwi.library.MinizipWrapper;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,19 +15,21 @@ public class Option {
     public static final int SPLIT_AUTO=0;
     public static final int SPLIT_SINGLE=1;
     public static final int SPLIT_DOUBLE=2;
-    public static final int DISPLAY_FIT=0;
-    public static final int DISPLAY_WIDTH=1;
-    public static final int DISPLAY_HEIGHT=2;
-    public static final int RESIZE_METHOD_BOX=0;
-    public static final int RESIZE_METHOD_BILINEAR=1;
-    public static final int RESIZE_METHOD_BSPLINE=2;
-    public static final int RESIZE_METHOD_CATMULLROM=3;
-    public static final int RESIZE_METHOD_LANCZOS3=4;
+    public static final int DISPLAY_FIT= FreeImageWrapper.DISPLAY_FIT;
+    public static final int DISPLAY_WIDTH= FreeImageWrapper.DISPLAY_WIDTH;
+    public static final int DISPLAY_HEIGHT= FreeImageWrapper.DISPLAY_HEIGHT;
+    public static final int RESIZE_METHOD_BOX= FreeImageWrapper.RESIZE_METHOD_BOX;
+    public static final int RESIZE_METHOD_BILINEAR= FreeImageWrapper.RESIZE_METHOD_BILINEAR;
+    public static final int RESIZE_METHOD_BSPLINE= FreeImageWrapper.RESIZE_METHOD_BSPLINE;
+    public static final int RESIZE_METHOD_CATMULLROM= FreeImageWrapper.RESIZE_METHOD_CATMULLROM;
+    public static final int RESIZE_METHOD_LANCZOS3= FreeImageWrapper.RESIZE_METHOD_LANCZOS3;
 
     private static Option ourInstance = new Option();
     private Properties optionProperties;
     private Properties lastProperties;
     private String propertiesPath;
+
+    private boolean isChanged;
 
     private boolean isPortrait;
     private boolean isReadLeftToRight;
@@ -46,6 +51,7 @@ public class Option {
         optionProperties = new Properties();
         lastProperties = new Properties();
 
+        isChanged = false;
         resetDefaultOption();
     }
 
@@ -145,6 +151,28 @@ public class Option {
         }
     }
 
+    public int getOptionViewMode()
+    {
+        switch (splitOption)
+        {
+            case Option.SPLIT_SINGLE:
+                return FreeImageWrapper.VIEW_MODE_SINGLE;
+            case Option.SPLIT_AUTO:
+                return isReadLeftToRight ? FreeImageWrapper.VIEW_MODE_AUTO_L : FreeImageWrapper.VIEW_MODE_AUTO_R;
+            case Option.SPLIT_DOUBLE:
+                return isReadLeftToRight ? FreeImageWrapper.VIEW_MODE_DOUBLE_L : FreeImageWrapper.VIEW_MODE_DOUBLE_R;
+        }
+        return FreeImageWrapper.VIEW_MODE_SINGLE;
+    }
+
+    public boolean IsChanged()
+    {
+        return isChanged;
+    }
+    public void setChanged(boolean _isChanged)
+    {
+        isChanged = _isChanged;
+    }
     public boolean IsPortrait()
     {
         return isPortrait;

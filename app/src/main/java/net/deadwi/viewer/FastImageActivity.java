@@ -122,6 +122,20 @@ public class FastImageActivity extends AppCompatActivity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        if(Option.getInstance().IsChanged())
+        {
+            fastView.clearImage();
+            requestImage(currntFileIndex, fastView.getCurrent().viewIndex, false);
+            Option.getInstance().setChanged(false);
+        }
+    }
+
+
     private void createPageControl()
     {
         pageControl = new Dialog(this);
@@ -521,6 +535,15 @@ class FastImage extends View implements Runnable
         return current;
     }
 
+    public void clearImage()
+    {
+        synchronized(lock)
+        {
+            current.complete = false;
+            next.complete = false;
+        }
+    }
+
     public void drawImageFromZipPath(String zipPath, String path, boolean isLastPage, int viewIndex, String nextPath)
     {
         synchronized(lock)
@@ -607,17 +630,17 @@ class FastImage extends View implements Runnable
 
     private int getOptionViewMode()
     {
-        return FreeImageWrapper.getOptionViewMode(Option.getInstance().IsReadLeftToRight(), Option.getInstance().getSplitOption());
+        return Option.getInstance().getOptionViewMode();
     }
 
     private int optionResizeMode()
     {
-        return FreeImageWrapper.getOptionResizeMode(Option.getInstance().getDisplayOption());
+        return Option.getInstance().getDisplayOption();
     }
 
     private int optionResizeMethod()
     {
-        return FreeImageWrapper.getOptionResizeMethod(Option.getInstance().getResizeMethodOption());
+        return Option.getInstance().getResizeMethodOption();
     }
 
     private int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex)

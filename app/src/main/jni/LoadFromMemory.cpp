@@ -46,41 +46,6 @@ enum RESIZE_MODE {
     RESIZE_MODE_HEIGHT_RATE
 };
 
-/** Generic image loader
-	@param lpszPathName Pointer to the full file name
-	@param flag Optional load flag constant
-	@return Returns the loaded dib if successful, returns NULL otherwise
-*/
-FIBITMAP* GenericLoader(const char* lpszPathName, int flag)
-{
-    FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-
-    // check the file signature and deduce its format
-    // (the second argument is currently not used by FreeImage)
-    fif = FreeImage_GetFileType(lpszPathName, 0);
-    if(fif == FIF_UNKNOWN) {
-        // no signature ?
-        // try to guess the file format from the file extension
-        fif = FreeImage_GetFIFFromFilename(lpszPathName);
-    }
-    LOGI("FIF : %d", fif);
-
-    // check that the plugin has reading capabilities ...
-    if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
-        // ok, let's load the file
-        FIBITMAP *dib = FreeImage_Load(fif, lpszPathName, flag);
-        // unless a bad file format, we are done !
-        return dib;
-    }
-    LOGI("Not support format : %d", fif);
-    return NULL;
-}
-
-/**
-	FreeImage error handler
-	@param fif Format / Plugin responsible for the error
-	@param message Error message
-*/
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
     std::string out;
@@ -101,7 +66,7 @@ static double now_ms()
     return tv.tv_sec*1000. + tv.tv_usec/1000.;
 }
 
-static uint16_t make565(uint8_t red, uint8_t green, uint8_t blue)
+inline static uint16_t make565(uint8_t red, uint8_t green, uint8_t blue)
 {
     return ((red>>3)<<11) | ((green>>2)<<5) | (blue>>3);
 }
@@ -157,6 +122,148 @@ static void copy_pixels_flip_vertical(void* to, AndroidBitmapInfo*  info, void* 
         toRow = toRow - info->stride;
     }
 }
+
+inline static uint8_t get_red_code_from_565(uint16_t c)
+{
+    return ((((c & FI16_565_RED_MASK) >> FI16_565_RED_SHIFT) * 0xFF) / 0x1F);
+}
+
+inline static uint8_t get_green_code_from_565(uint16_t c)
+{
+    return ((((c & FI16_565_GREEN_MASK) >> FI16_565_GREEN_SHIFT) * 0xFF) / 0x3F);
+}
+
+inline static uint8_t get_blue_code_from_565(uint16_t c)
+{
+    return ((((c & FI16_565_BLUE_MASK) >> FI16_565_BLUE_SHIFT) * 0xFF) / 0x1F);
+}
+
+inline static uint8_t get_gray_code_from_565(uint16_t c)
+{
+    // http://www.w3.org/Graphics/Color/sRGB
+    uint8_t g =  0.2126f * get_red_code_from_565(c) +
+                 0.7152f * get_green_code_from_565(c) +
+                 0.0722f * get_blue_code_from_565(c);
+    return g;
+}
+
+inline static uint16_t get_gray_color_from_565(uint16_t c)
+{
+    uint8_t g =  get_gray_code_from_565(c);
+    return make565(g,g,g);
+}
+
+inline static float get_saturation(uint8_t r,uint8_t g,uint8_t b)
+{
+    float min = std::min( std::min(r, g), b);
+    float max = std::max( std::max(r, g), b);
+    if(max == 0)
+        return 0;
+    return (max-min) / max;
+}
+
+inline static float get_saturation(uint16_t c)
+{
+    uint8_t r = get_red_code_from_565(c);
+    uint8_t g = get_green_code_from_565(c);
+    uint8_t b = get_blue_code_from_565(c);
+    float min = std::min( std::min(r, g), b);
+    float max = std::max( std::max(r, g), b);
+    if(max == 0)
+        return 0;
+    return (max-min) / max;
+}
+
+inline static void get_HSV_from_565(uint16_t c, float& h, float& s, float& v)
+{
+    uint8_t r = get_red_code_from_565(c);
+    uint8_t g = get_green_code_from_565(c);
+    uint8_t b = get_blue_code_from_565(c);
+    float min = std::min( std::min(r, g), b);
+    float max = std::max( std::max(r, g), b);
+    float delta = max - min;
+    if( max != 0 )
+        s = delta / max;
+    else
+    {
+        s = 0;
+        h = -1;
+        return;
+    }
+    if( r == max )
+        h = ( g - b ) / delta;		// between yellow & magenta
+    else if( g == max )
+        h = 2 + ( b - r ) / delta;	// between cyan & yellow
+    else
+        h = 4 + ( r - g ) / delta;	// between magenta & cyan
+    h *= 60;				// degrees
+    if( h < 0 )
+        h += 360;
+}
+
+static void convert_grayscale(FIBITMAP *dib565)
+{
+    const unsigned width = FreeImage_GetWidth(dib565);
+    const unsigned height = FreeImage_GetHeight(dib565);
+    for (unsigned rows = 0; rows < height; rows++)
+    {
+        uint16_t* line = (uint16_t*)FreeImage_GetScanLine(dib565, rows);
+        for (int xx = 0; xx < width; xx++)
+        {
+            line[xx] = get_gray_color_from_565(line[xx]);
+        }
+    }
+}
+
+static void convert_grayscale_1bit(FIBITMAP *dib565, uint8_t threshold)
+{
+    const unsigned width = FreeImage_GetWidth(dib565);
+    const unsigned height = FreeImage_GetHeight(dib565);
+    for (unsigned rows = 0; rows < height; rows++)
+    {
+        uint16_t* line = (uint16_t*)FreeImage_GetScanLine(dib565, rows);
+        for (int xx = 0; xx < width; xx++)
+        {
+            uint8_t g = get_gray_code_from_565(line[xx]);
+            if(g>=threshold)
+                line[xx] = make565(255,255,255);
+            else
+                line[xx] = make565(0,0,0);
+        }
+    }
+}
+
+static void convert_grayscale_for_black_text(FIBITMAP *dib)
+{
+    RGBQUAD rgb;
+    RGBQUAD white;
+    white.rgbRed=255;
+    white.rgbGreen=255;
+    white.rgbBlue=255;
+
+    const unsigned width = FreeImage_GetWidth(dib);
+    const unsigned height = FreeImage_GetHeight(dib);
+    for (unsigned yy = 0; yy < height; yy++)
+    {
+        for (int xx = 0; xx < width; xx++)
+        {
+            FreeImage_GetPixelColor(dib, xx, yy, &rgb);
+
+            if(get_saturation(rgb.rgbRed,rgb.rgbGreen,rgb.rgbBlue)<0.05)
+                FreeImage_SetPixelColor(dib, xx, yy, &rgb);
+            else
+                FreeImage_SetPixelColor(dib, xx, yy, &white);
+        }
+    }
+}
+
+static void image_filter(FIBITMAP *dib565)
+{
+    // bpp : 16
+    // FREE_IMAGE_TYPE : FIT_BITMAP
+    convert_grayscale_1bit(dib565,200);
+}
+
 
 static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
 {
@@ -374,15 +481,13 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
 
     LOGI("origin xy-xy : %d %d %d %d (last : %d)", originX, originY, originX2, originY2, (isLastPage ? 1 : 0));
 
-    //FIBITMAP *dibTmp = FreeImage_Copy(dib, originX, originY, originX2, originY2);
-    //FIBITMAP *rescaled = FreeImage_Rescale(dibTmp, resizeWidth, resizeHeight);
-    //FreeImage_Unload(dibTmp);
-
     FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, originX, originY, originX2, originY2, (FREE_IMAGE_FILTER)resizeMethod);
     FreeImage_Unload(dib);
 
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
     FreeImage_Unload(rescaled);
+
+    image_filter(dib565);
 
     fill_pixels(&info, pixels, make565(255,255,255));
     copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);

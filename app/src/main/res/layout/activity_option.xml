@@ -203,31 +203,31 @@
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Box"
+                    android:text="Box (slow 1x)"
                     android:id="@+id/radioMethod1" />
 
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bilinear"
+                    android:text="Bilinear (slow 1.6x)"
                     android:id="@+id/radioMethod2" />
 
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bspline"
+                    android:text="Bspline (slow 2.7x)"
                     android:id="@+id/radioMethod3" />
 
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Catmull"
+                    android:text="Catmull (slow 2.8x)"
                     android:id="@+id/radioMethod4" />
 
                 <RadioButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lanczos3"
+                    android:text="Lanczos3 (slow 4.0x)"
                     android:id="@+id/radioMethod5" />
             </RadioGroup>
 
