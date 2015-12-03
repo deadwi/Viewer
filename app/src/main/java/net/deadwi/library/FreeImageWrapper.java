@@ -23,6 +23,7 @@ public class FreeImageWrapper
     final static public int RESIZE_METHOD_BSPLINE = 3;
     final static public int RESIZE_METHOD_CATMULLROM = 4;
     final static public int RESIZE_METHOD_LANCZOS3 = 5;
+    final static public String FILTER_GRAY_2BIT = "GRAY2";
 
     static public void init()
     {
@@ -44,6 +45,6 @@ public class FreeImageWrapper
     static private native void initFreeImage();
     static private native void deInitFreeImage();
     static public native boolean loadImageFromMemory(Bitmap  bitmap, Byte[] data, int dataSize);
-    static public native int loadImageFromPath(Bitmap  bitmap, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod);
-    static public native int loadImageFromZip(Bitmap  bitmap, String zipPath, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod);
+    static public native int loadImageFromPath(Bitmap  bitmap, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
+    static public native int loadImageFromZip(Bitmap  bitmap, String zipPath, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
 }

@@ -643,9 +643,14 @@ class FastImage extends View implements Runnable
         return Option.getInstance().getResizeMethodOption();
     }
 
+    private String optionFilter()
+    {
+        return Option.getInstance().getFilterOption();
+    }
+
     private int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex)
     {
-        return FreeImageWrapper.loadImageFromPath(bitmap, path, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod());
+        return FreeImageWrapper.loadImageFromPath(bitmap, path, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod(), optionFilter());
     }
 
     private int drawImageFromZipPathToBitmap(String zipPath, String path, Bitmap bitmap, boolean isLastPage, int viewIndex)
@@ -654,7 +659,7 @@ class FastImage extends View implements Runnable
         String innerPath = path;
         if(innerPath.charAt(0)=='/')
             innerPath = innerPath.substring(1);
-        return FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod());
+        return FreeImageWrapper.loadImageFromZip(bitmap, zipPath, innerPath, isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), optionResizeMethod(), optionFilter());
     }
 
     private Bitmap getOutBitmap()

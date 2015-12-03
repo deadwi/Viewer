@@ -36,6 +36,8 @@ public class Option {
     private int splitOption;
     private int displayOption;
     private int resizeMethodOption;
+    private boolean isEnableFilterGray;
+    private int filterGrayThreshold;
 
     private String lastCurrentPath;
     private String lastInnerPath;
@@ -165,6 +167,16 @@ public class Option {
         return FreeImageWrapper.VIEW_MODE_SINGLE;
     }
 
+    public String getFilterOption()
+    {
+        String optionStr = "";
+        if(isEnableFilterGray)
+        {
+            optionStr += FreeImageWrapper.FILTER_GRAY_2BIT + "|" + filterGrayThreshold;
+        }
+        return optionStr;
+    }
+
     public boolean IsChanged()
     {
         return isChanged;
@@ -213,6 +225,11 @@ public class Option {
     {
         resizeMethodOption = option;
     }
+    public boolean IsEnableFilterGray() { return isEnableFilterGray; }
+    public void setEnableFilterGray(boolean enable) { isEnableFilterGray = enable; }
+    public int getFilterGrayThreshold() { return filterGrayThreshold; }
+    public void setFilterGrayThreshold(int threshold) { filterGrayThreshold = threshold; }
+
     public String getLastCurrentPath() { return lastCurrentPath; }
     public String getLastInnerPath() { return lastInnerPath; }
     public void setLastPath(String currentPath, String innerPath)

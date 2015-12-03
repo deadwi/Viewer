@@ -7,8 +7,10 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.RadioButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 /**
@@ -16,9 +18,11 @@ import android.widget.TextView;
  */
 public class OptionActivity  extends AppCompatActivity
 {
+    protected static final int GRAY_MIN_VALUE=100;
+    protected static final int GRAY_MAX_VALUE=255;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_option);
 
@@ -37,6 +41,27 @@ public class OptionActivity  extends AppCompatActivity
                 overridePendingTransition(0, 0);
             }
         });
+        findViewById(R.id.checkBoxGray).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ((SeekBar)findViewById(R.id.seekGray)).setEnabled( ((CheckBox)findViewById(R.id.checkBoxGray)).isChecked() );
+            }
+        });
+        ((SeekBar)findViewById(R.id.seekGray)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                //currntFileIndex = progress;
+                setGraySeek(progress, GRAY_MAX_VALUE - GRAY_MIN_VALUE);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
 
         setUIFromOption();
     }
@@ -47,6 +72,16 @@ public class OptionActivity  extends AppCompatActivity
         super.onPostCreate(savedInstanceState);
 
         hide();
+    }
+
+    private void setGraySeek(int v,int max)
+    {
+        ((SeekBar)findViewById(R.id.seekGray)).setMax(max);
+        ((SeekBar)findViewById(R.id.seekGray)).setProgress(v);
+        if(v==max)
+            ((TextView)findViewById(R.id.textGrayThreshold)).setText("Auto");
+        else
+            ((TextView)findViewById(R.id.textGrayThreshold)).setText("" + v);
     }
 
     private void setUIFromOption()
@@ -108,6 +143,21 @@ public class OptionActivity  extends AppCompatActivity
                 ((RadioButton) findViewById(R.id.radioMethod2)).setChecked(true);
                 break;
         }
+
+        if(Option.getInstance().IsEnableFilterGray())
+        {
+            ((SeekBar)findViewById(R.id.seekGray)).setEnabled(true);
+            ((CheckBox)findViewById(R.id.checkBoxGray)).setChecked(true);
+        }
+        else
+        {
+            ((SeekBar)findViewById(R.id.seekGray)).setEnabled(false);
+            ((CheckBox)findViewById(R.id.checkBoxGray)).setChecked(false);
+        }
+        int v = Option.getInstance().getFilterGrayThreshold();
+        if(v<GRAY_MIN_VALUE)
+            v = GRAY_MAX_VALUE;
+        setGraySeek(v - GRAY_MIN_VALUE, GRAY_MAX_VALUE - GRAY_MIN_VALUE);
     }
 
     private void setOptionFromUI()
@@ -138,6 +188,16 @@ public class OptionActivity  extends AppCompatActivity
             Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_LANCZOS3);
         else
             Option.getInstance().setResizeMethodOption(Option.RESIZE_METHOD_BILINEAR);
+
+        if(((CheckBox)findViewById(R.id.checkBoxGray)).isChecked())
+        {
+            Option.getInstance().setEnableFilterGray(true);
+            Option.getInstance().setFilterGrayThreshold( GRAY_MIN_VALUE + ((SeekBar)findViewById(R.id.seekGray)).getProgress() );
+        }
+        else
+        {
+            Option.getInstance().setEnableFilterGray(false);
+        }
 
         if(Option.getInstance().IsPortrait())
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);

@@ -215,10 +215,58 @@ static void convert_grayscale(FIBITMAP *dib565)
     }
 }
 
+static uint8_t get_auto_grayscale_1bit_threshold(FIBITMAP *dib565)
+{
+    const int GRAY_SIZE = 256;
+    unsigned v[GRAY_SIZE] = {0};
+    const unsigned width = FreeImage_GetWidth(dib565);
+    const unsigned height = FreeImage_GetHeight(dib565);
+    for (unsigned rows = 0; rows < height; rows++)
+    {
+        uint16_t* line = (uint16_t*)FreeImage_GetScanLine(dib565, rows);
+        for (int xx = 0; xx < width; xx++)
+        {
+            uint8_t g = get_gray_code_from_565(line[xx]);
+            v[g]++;
+        }
+    }
+
+    int ma = 40;
+    unsigned mv[GRAY_SIZE] = {0};
+    for(int i=ma;i<GRAY_SIZE;i++)
+    {
+        mv[i]=0;
+        for(int j=0;j<ma;j++)
+            mv[i-j] += v[i];
+    }
+
+    double total = width*height;
+    double grade;
+    double maxGrade=0;
+    uint8_t maxGray=0;
+    for(int i=ma;i<GRAY_SIZE;i++)
+    {
+        grade = static_cast<double>(mv[i]==0 ? 1 : mv[i])/static_cast<double>(mv[i-1]==0 ? 1 : mv[i-1]);
+        if(grade > maxGrade && mv[i]/total>0.001)
+        {
+            //LOGE("%d %d %g",i,mv[i],grade);
+            maxGrade = grade;
+            maxGray = static_cast<uint8_t>(i);
+        }
+    }
+
+    LOGI("auto grayscale threshold : %d (v=%g)",maxGray,maxGrade);
+    return maxGray;
+}
+
 static void convert_grayscale_1bit(FIBITMAP *dib565, uint8_t threshold)
 {
     const unsigned width = FreeImage_GetWidth(dib565);
     const unsigned height = FreeImage_GetHeight(dib565);
+
+    if(threshold>=255)
+        threshold = get_auto_grayscale_1bit_threshold(dib565);
+
     for (unsigned rows = 0; rows < height; rows++)
     {
         uint16_t* line = (uint16_t*)FreeImage_GetScanLine(dib565, rows);
@@ -261,7 +309,7 @@ static void image_filter(FIBITMAP *dib565)
 {
     // bpp : 16
     // FREE_IMAGE_TYPE : FIT_BITMAP
-    convert_grayscale_1bit(dib565,200);
+    convert_grayscale_1bit(dib565,255);
 }
 
 
@@ -541,7 +589,8 @@ JNIEXPORT jboolean JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFro
 }
 
 JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPath(JNIEnv *env, jobject obj,jobject bitmap,jstring path, jboolean isLastPage, jint viewIndex,
-                                                                                  int optionViewMode, int optionResizeMode, int optionResizeMethod)
+                                                                                  int optionViewMode, int optionResizeMode, int optionResizeMethod,
+                                                                                  jstring filterStr)
 {
     jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
@@ -549,6 +598,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
     if(imgPath==NULL)
         return status;
     LOGI("Load : %s",imgPath);
+    const char * filterOption = env->GetStringUTFChars(filterStr, &isCopy);
 
     FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(imgPath);
     if(fif == FIF_UNKNOWN)
@@ -568,15 +618,18 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
     }
 
     env->ReleaseStringUTFChars(path, imgPath);
+    env->ReleaseStringUTFChars(filterStr, filterOption);
     return status;
 }
 
 JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip(JNIEnv *env, jobject obj,jobject bitmap, jstring zipfileStr, jstring innerFileStr, jboolean isLastPage, jint viewIndex,
-                                                                                 int optionViewMode, int optionResizeMode, int optionResizeMethod)
+                                                                                 int optionViewMode, int optionResizeMode, int optionResizeMethod,
+                                                                                 jstring filterStr)
 {
     jint status = RETURN_CODE_FAIL_UNKOWN;
     jboolean isCopy;
     const char * zipfilename = env->GetStringUTFChars(zipfileStr, &isCopy);
+    const char * filterOption = env->GetStringUTFChars(filterStr, &isCopy);
     char * innerFilename = cstrFromJavaStringEucKR(env,innerFileStr);
     LOGI("Load : %s",innerFilename);
 
@@ -619,6 +672,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
     if(innerFilename)
         free(innerFilename);
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);
+    env->ReleaseStringUTFChars(filterStr, filterOption);
     return status;
 }
 
