@@ -12,6 +12,8 @@
 #include "FreeImage_Rescale.h"
 #include "StringConverter_For_JNI.h"
 #include "minizip/minizip.h"
+#include "split.h"
+#include "interpret_cast.h"
 
 #define  LOG_TAG    "libimage"
 #ifdef NDEBUG
@@ -45,6 +47,8 @@ enum RESIZE_MODE {
     RESIZE_MODE_WIDTH_RATE,
     RESIZE_MODE_HEIGHT_RATE
 };
+
+static const char* FILTER_GRAY_2BIT = "GRAY2";
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
@@ -305,11 +309,26 @@ static void convert_grayscale_for_black_text(FIBITMAP *dib)
     }
 }
 
-static void image_filter(FIBITMAP *dib565)
+static void image_filter(FIBITMAP *dib565,const char * filterOption)
 {
     // bpp : 16
     // FREE_IMAGE_TYPE : FIT_BITMAP
-    convert_grayscale_1bit(dib565,255);
+
+    std::vector<std::string> fset;
+    std::vector<std::string> argset;
+    split(filterOption,' ',fset);
+    for(size_t i=0;i<fset.size();i++)
+    {
+        argset.clear();
+        split(fset[i],'|',argset);
+        if(argset.empty())
+            continue;
+        if(argset[0]==FILTER_GRAY_2BIT && argset.size()==2)
+        {
+            uint8_t v = interpret_cast<int>(argset[1]);
+            convert_grayscale_1bit(dib565,v);
+        }
+    }
 }
 
 
@@ -381,7 +400,7 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
-static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int resizeMethod, bool isLastPage, int viewIndex, double nextGapRate=0.1)
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int resizeMethod, bool isLastPage, int viewIndex, double nextGapRate=0.1,const char * filterOption=NULL)
 {
     int status = -1;
     AndroidBitmapInfo info;
@@ -535,7 +554,8 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     FIBITMAP *dib565 = FreeImage_ConvertTo16Bits565(rescaled);
     FreeImage_Unload(rescaled);
 
-    image_filter(dib565);
+    if(filterOption)
+        image_filter(dib565, filterOption);
 
     fill_pixels(&info, pixels, make565(255,255,255));
     copy_pixels_flip_vertical(pixels, &info, FreeImage_GetBits(dib565), FreeImage_GetPitch(dib565), displayX, displayY, resizeWidth, resizeHeight);
@@ -611,7 +631,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromPat
         if(dib)
         {
             LOGI("Load OK");
-            status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex);
+            status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex,0.1,filterOption);
         }
         else
             status = RETURN_CODE_FAIL_TO_LOADIMAGE;
@@ -652,7 +672,7 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
 
                 if (dib) {
                     LOGI("Load OK");
-                    status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex);
+                    status = image_out2(env,bitmap,dib,optionViewMode,optionResizeMode,optionResizeMethod,isLastPage==JNI_TRUE,viewIndex,0.1,filterOption);
                 }
             }
         }
