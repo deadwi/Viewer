@@ -213,7 +213,9 @@ public class FileManager
 
     static public boolean isZipFile(String path)
     {
-        return path.toLowerCase().endsWith(".zip");
+        String lowerString = path.toLowerCase();
+        return lowerString.toLowerCase().endsWith(".zip") ||
+                lowerString.toLowerCase().endsWith(".cbz");
     }
     static public boolean isImageFile(String path)
     {
@@ -221,8 +223,10 @@ public class FileManager
 
         return lowerString.endsWith(".jpg") ||
                 lowerString.endsWith(".jpeg") ||
+                lowerString.endsWith(".jng") ||
                 lowerString.endsWith(".png") ||
                 lowerString.endsWith(".bmp") ||
+                lowerString.endsWith(".tif") ||
                 lowerString.endsWith(".gif");
     }
 
