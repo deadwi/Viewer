@@ -1,24 +1,9 @@
 package net.deadwi.viewer;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Stack;
 import java.io.File;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import android.util.Log;
 
@@ -232,7 +217,7 @@ public class FileManager
 
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {
-        ArrayList<FileItem> fileList = (ArrayList<FileItem>)MinizipWrapper.getFilenamesInZip(zipFile);
+        @SuppressWarnings("unchecked") ArrayList<FileItem> fileList = (ArrayList<FileItem>)MinizipWrapper.getFilenamesInZip(zipFile);
         if(innerPath==null)
             return fileList;
         String innerPathPrefix = innerPath + "/";

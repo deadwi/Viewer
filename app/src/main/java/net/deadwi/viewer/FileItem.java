@@ -106,7 +106,7 @@ public class FileItem
         return lhs.compareTo(rhs);
     }
 
-    public static final Comparator CompareAlphIgnoreCase = new Comparator<FileItem>()
+    public static final Comparator<FileItem> CompareAlphIgnoreCase = new Comparator<FileItem>()
     {
         @Override
         public int compare(FileItem lhs, FileItem rhs)
@@ -119,7 +119,7 @@ public class FileItem
         }
     };
 
-    public static final Comparator CompareAlphIgnoreCaseWithNumber = new Comparator<FileItem>()
+    public static final Comparator<FileItem> CompareAlphIgnoreCaseWithNumber = new Comparator<FileItem>()
     {
         @Override
         public int compare(FileItem lhs, FileItem rhs)
@@ -134,7 +134,7 @@ public class FileItem
         }
     };
 
-    public static final Comparator CompareFileSize = new Comparator<FileItem>()
+    public static final Comparator<FileItem> CompareFileSize = new Comparator<FileItem>()
     {
         @Override
         public int compare(FileItem lhs, FileItem rhs)
@@ -149,7 +149,7 @@ public class FileItem
         }
     };
 
-    public static final Comparator CompareFileType = new Comparator<FileItem>()
+    public static final Comparator<FileItem> CompareFileType = new Comparator<FileItem>()
     {
         @Override
         public int compare(FileItem lhs, FileItem rhs)
