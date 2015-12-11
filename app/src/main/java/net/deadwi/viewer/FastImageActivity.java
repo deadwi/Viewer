@@ -18,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.graphics.Bitmap;
@@ -135,6 +136,24 @@ public class FastImageActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public boolean onKeyDown(int keycode, KeyEvent event)
+    {
+        Log.d("FASTIMAGE","key="+keycode);
+        // ridibooks.com/Paper hardware key
+        switch(keycode)
+        {
+            // prev
+            case KeyEvent.KEYCODE_PAGE_UP:
+                previousViewPage();
+                break;
+            // next
+            case KeyEvent.KEYCODE_PAGE_DOWN:
+                nextViewPage();
+                break;
+        }
+        return true;
+    }
 
     private void createPageControl()
     {
