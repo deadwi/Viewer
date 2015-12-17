@@ -78,10 +78,22 @@ public class FastImageActivity extends AppCompatActivity
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
+                    // Left side
                     if (event.getX() < (width / 4))
-                        previousViewPage();
+                    {
+                        if(Option.getInstance().isRightTouchNextPage())
+                            previousViewPage();
+                        else
+                            nextViewPage();
+                    }
+                    // Right side
                     else if (event.getX() > (width / 4 * 3))
-                        nextViewPage();
+                    {
+                        if(Option.getInstance().isRightTouchNextPage())
+                            nextViewPage();
+                        else
+                            previousViewPage();
+                    }
                     else if (event.getY() < (height / 4))
                         closeViewPage();
                     else if (event.getY() > (height / 4 * 3))
@@ -145,10 +157,12 @@ public class FastImageActivity extends AppCompatActivity
         {
             // prev
             case KeyEvent.KEYCODE_PAGE_UP:
+            //case KeyEvent.KEYCODE_VOLUME_UP:
                 previousViewPage();
                 break;
             // next
             case KeyEvent.KEYCODE_PAGE_DOWN:
+            //case KeyEvent.KEYCODE_VOLUME_DOWN:
                 nextViewPage();
                 break;
         }

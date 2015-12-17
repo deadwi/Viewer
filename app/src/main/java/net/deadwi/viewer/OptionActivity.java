@@ -96,6 +96,20 @@ public class OptionActivity  extends AppCompatActivity
         else
             ((RadioButton) findViewById(R.id.radioButtonReadR)).setChecked(true);
 
+        switch (Option.getInstance().getTouchOption())
+        {
+            case Option.TOUCH_PREV_NEXT:
+                ((RadioButton) findViewById(R.id.radioButtonTouchPN)).setChecked(true);
+                break;
+            case Option.TOUCH_NEXT_PREV:
+                ((RadioButton) findViewById(R.id.radioButtonTouchNP)).setChecked(true);
+                break;
+            case Option.TOUCH_AUTO:
+            default:
+                ((RadioButton) findViewById(R.id.radioButtonTouchA)).setChecked(true);
+                break;
+        }
+
         switch (Option.getInstance().getSplitOption())
         {
             case Option.SPLIT_SINGLE:
@@ -164,6 +178,14 @@ public class OptionActivity  extends AppCompatActivity
     {
         Option.getInstance().setPortrait(((RadioButton) findViewById(R.id.radioButtonPortraitP)).isChecked());
         Option.getInstance().setReadDirection(((RadioButton) findViewById(R.id.radioButtonReadL)).isChecked());
+
+        if(((RadioButton) findViewById(R.id.radioButtonTouchPN)).isChecked())
+            Option.getInstance().setTouchOption(Option.TOUCH_PREV_NEXT);
+        else if(((RadioButton) findViewById(R.id.radioButtonTouchNP)).isChecked())
+            Option.getInstance().setTouchOption(Option.TOUCH_NEXT_PREV);
+        else
+            Option.getInstance().setTouchOption(Option.TOUCH_AUTO);
+
         if(((RadioButton) findViewById(R.id.radioButtonSplitS)).isChecked())
             Option.getInstance().setSplitOption(Option.SPLIT_SINGLE);
         else if(((RadioButton) findViewById(R.id.radioButtonSplitS)).isChecked())

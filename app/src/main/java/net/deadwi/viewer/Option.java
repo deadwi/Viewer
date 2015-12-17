@@ -15,6 +15,9 @@ public class Option {
     public static final int SPLIT_AUTO=0;
     public static final int SPLIT_SINGLE=1;
     public static final int SPLIT_DOUBLE=2;
+    public static final int TOUCH_AUTO=0;
+    public static final int TOUCH_PREV_NEXT=1;
+    public static final int TOUCH_NEXT_PREV=2;
     public static final int DISPLAY_FIT= FreeImageWrapper.DISPLAY_FIT;
     public static final int DISPLAY_WIDTH= FreeImageWrapper.DISPLAY_WIDTH;
     public static final int DISPLAY_HEIGHT= FreeImageWrapper.DISPLAY_HEIGHT;
@@ -34,6 +37,7 @@ public class Option {
     private boolean isPortrait;
     private boolean isReadLeftToRight;
     private int splitOption;
+    private int touchOption;
     private int displayOption;
     private int resizeMethodOption;
     private boolean isEnableFilterGray;
@@ -62,6 +66,7 @@ public class Option {
         isPortrait = true;
         isReadLeftToRight = true;
         splitOption = SPLIT_AUTO;
+        touchOption = TOUCH_AUTO;
         displayOption = DISPLAY_FIT;
         resizeMethodOption = RESIZE_METHOD_BILINEAR;
     }
@@ -86,6 +91,7 @@ public class Option {
 
         isPortrait = optionProperties.getProperty("option_portrait","true").compareTo("true")==0;
         isReadLeftToRight = optionProperties.getProperty("option_read_left_to_right","true").compareTo("true")==0;
+        touchOption = Integer.parseInt(optionProperties.getProperty("option_touch",""+TOUCH_AUTO));
         splitOption = Integer.parseInt(optionProperties.getProperty("option_split",""+SPLIT_AUTO));
         displayOption = Integer.parseInt(optionProperties.getProperty("option_display",""+DISPLAY_FIT));
         resizeMethodOption = Integer.parseInt(optionProperties.getProperty("option_resize_method",""+RESIZE_METHOD_BILINEAR));
@@ -101,6 +107,7 @@ public class Option {
     {
         optionProperties.setProperty("option_portrait",(isPortrait ? "true" : "false"));
         optionProperties.setProperty("option_read_left_to_right",(isReadLeftToRight ? "true" : "false"));
+        optionProperties.setProperty("option_touch",""+touchOption);
         optionProperties.setProperty("option_split",""+splitOption);
         optionProperties.setProperty("option_display",""+displayOption);
         optionProperties.setProperty("option_resize_method", "" + resizeMethodOption);
@@ -177,6 +184,18 @@ public class Option {
         return optionStr;
     }
 
+    public boolean isRightTouchNextPage()
+    {
+        switch (touchOption)
+        {
+            case Option.TOUCH_PREV_NEXT:
+                return true;
+            case Option.TOUCH_NEXT_PREV:
+                return false;
+        }
+        return isReadLeftToRight;
+    }
+
     public boolean IsChanged()
     {
         return isChanged;
@@ -201,6 +220,8 @@ public class Option {
     {
         isReadLeftToRight = _isLeftToRight;
     }
+    public int getTouchOption() { return touchOption; }
+    public void setTouchOption(int option) { touchOption = option; }
     public int getSplitOption()
     {
         return splitOption;
