@@ -98,7 +98,7 @@ public class FullscreenActivity extends AppCompatActivity
         findViewById(R.id.buttonOption).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(FullscreenActivity.this, OptionActivity.class);
+                Intent myIntent = new Intent(FullscreenActivity.this, OptionTabActivity.class);
                 startActivity(myIntent);
                 overridePendingTransition(0, 0);
             }
@@ -269,11 +269,15 @@ public class FullscreenActivity extends AppCompatActivity
         Bundle data = new Bundle();
         if(zipPath==null)
         {
+            if(FileManager.isExist(viewPath)==false)
+                return;
             data.putString(FullscreenActivity.MSG_DATA_PATH, FileManager.getPathFromFullpath(viewPath, "/"));
             data.putString(FullscreenActivity.MSG_DATA_NAME, FileManager.getNameFromFullpath(viewPath));
         }
         else
         {
+            if(FileManager.isExist(zipPath)==false)
+                return;
             data.putString(FullscreenActivity.MSG_DATA_PATH, FileManager.getPathFromFullpath(zipPath, "/"));
             data.putString(FullscreenActivity.MSG_DATA_NAME, FileManager.getNameFromFullpath(zipPath));
             data.putString(FullscreenActivity.MSG_DATA_VIEW_FILE, viewPath );
