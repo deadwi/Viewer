@@ -9,11 +9,11 @@
     <string name="BUTTON_PREV_PAGE"><![CDATA[<]]></string>
     <string name="BUTTON_NEXT_PAGE"><![CDATA[>]]></string>
     <string name="TEXT_SEARCH">Search</string>
-    <string name="MESSAGE_LAST_PAGE">마지막 페이지</string>
-    <string name="MESSAGE_FIRST_PAGE">첫번째 페이지</string>
+    <string name="MESSAGE_LAST_PAGE">Last Page</string>
+    <string name="MESSAGE_FIRST_PAGE">First Page</string>
     <string name="BUTTON_OK">OK</string>
     <string name="BUTTON_CANCEL">Cancel</string>
-    <string name="MESSAGE_NO_IMAGE">이미지가 없습니다</string>
+    <string name="MESSAGE_NO_IMAGE">No Image</string>
     <string name="BUTTON_LIST">LIST</string>
     <string name="BUTTON_PREV">PREV</string>
     <string name="BUTTON_NEXT">NEXT</string>

@@ -11,8 +11,8 @@ model {
             applicationId = "net.deadwi.viewer"
             minSdkVersion.apiLevel    = 15
             targetSdkVersion.apiLevel = 23
-            versionCode = 3
-            versionName = "1.02"
+            versionCode = 4
+            versionName = "1.03"
         }
 
     }

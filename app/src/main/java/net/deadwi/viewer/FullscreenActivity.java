@@ -85,7 +85,7 @@ public class FullscreenActivity extends AppCompatActivity
         fileManager.setSortType(FileManager.SORT_ALPHA_WITH_NUM);
         // last path
         fileManager.setCurrentDirInZip(Option.getInstance().getLastCurrentPath(), Option.getInstance().getLastInnerPath());
-        Log.d("MAIN", "last path : " + (Option.getInstance().getLastCurrentPath()!=null ? Option.getInstance().getLastCurrentPath() : "NULL"));
+        Log.d("MAIN", "last path : " + (Option.getInstance().getLastCurrentPath() != null ? Option.getInstance().getLastCurrentPath() : "NULL"));
 
         currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
         fileListAdapter = new CustomAdapter(fileManager, handler);
@@ -111,33 +111,32 @@ public class FullscreenActivity extends AppCompatActivity
                 refreshFileList(true);
             }
         });
+        // 다운로드 디렉토리
+        findViewById(R.id.buttonDown).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Not support yet", Toast.LENGTH_SHORT).show();
+            }
+        });
         // 상위 디렉토리
         findViewById(R.id.buttonUpFolder).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fileManager.movePreviousDir();
-                refreshFileList(true);
+                goUpFolder();
             }
         });
         // 이전 페이지
         findViewById(R.id.buttonPrevPage).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                hideKeyboard();
-
-                int visibleChildCount = (fileListView.getLastVisiblePosition() - fileListView.getFirstVisiblePosition()) + 1;
-                int prevPos = fileListView.getFirstVisiblePosition() - visibleChildCount + 2;
-                if (prevPos < 0)
-                    prevPos = 0;
-                fileListView.setSelection(prevPos);
+                goNextPage();
             }
         });
         // 다음 페이지
         findViewById(R.id.buttonNextPage).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                hideKeyboard();
-                fileListView.setSelection(fileListView.getLastVisiblePosition());
+                goPreviousPage();
             }
         });
         // 첫페이지
@@ -191,6 +190,53 @@ public class FullscreenActivity extends AppCompatActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         refreshFileList(false);
         Option.getInstance().setChanged(false);
+    }
+
+    @Override
+    public boolean onKeyDown(int keycode, KeyEvent event)
+    {
+        Log.d("MAIN", "key=" + keycode);
+        // ridibooks.com/Paper hardware key
+        switch(keycode)
+        {
+            // prev
+            case KeyEvent.KEYCODE_PAGE_UP:
+                //case KeyEvent.KEYCODE_VOLUME_UP:
+                goPreviousPage();
+                break;
+            // next
+            case KeyEvent.KEYCODE_PAGE_DOWN:
+                //case KeyEvent.KEYCODE_VOLUME_DOWN:
+                goNextPage();
+                break;
+            // back
+            case KeyEvent.KEYCODE_BACK:
+                goUpFolder();
+                break;
+        }
+        return true;
+    }
+
+    private void goUpFolder()
+    {
+        fileManager.movePreviousDir();
+        refreshFileList(true);
+    }
+
+    private void goNextPage()
+    {
+        hideKeyboard();
+        int visibleChildCount = (fileListView.getLastVisiblePosition() - fileListView.getFirstVisiblePosition()) + 1;
+        int prevPos = fileListView.getFirstVisiblePosition() - visibleChildCount + 2;
+        if (prevPos < 0)
+            prevPos = 0;
+        fileListView.setSelection(prevPos);
+    }
+
+    private void goPreviousPage()
+    {
+        hideKeyboard();
+        fileListView.setSelection(fileListView.getLastVisiblePosition());
     }
 
     private void handleMessage(Message msg)

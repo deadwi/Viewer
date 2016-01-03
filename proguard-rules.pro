@@ -1,0 +1,6 @@
+-dontwarn android.support.**
+-keep class android.support.** { *; }
+-keep interface android.support.** { *; }
+-keep class net.deadwi.library.FreeImageWrapper { *; }
+-keep class net.deadwi.library.MinizipWrapper { *; }
+-keep class net.deadwi.viewer.FileItem { public *; }

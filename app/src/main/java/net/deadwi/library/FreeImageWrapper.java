@@ -24,6 +24,7 @@ public class FreeImageWrapper
     final static public int RESIZE_METHOD_CATMULLROM = 4;
     final static public int RESIZE_METHOD_LANCZOS3 = 5;
     final static public String FILTER_GRAY_2BIT = "GRAY2";
+    final static public String FILTER_ADJUST_COLOR = "AC";
 
     static public void init()
     {

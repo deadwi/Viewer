@@ -49,6 +49,7 @@ enum RESIZE_MODE {
 };
 
 static const char* FILTER_GRAY_2BIT = "GRAY2";
+static const char* FILTER_ADJUST_COLOR = "AC";
 
 void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
@@ -285,6 +286,23 @@ static void convert_grayscale_1bit(FIBITMAP *dib565, uint8_t threshold)
     }
 }
 
+static void convert_adjust_colors(FIBITMAP *dib565, int brightness, int contrast, int invert)
+{
+    if(brightness==0 && contrast==0 && invert!=0)
+        FreeImage_Invert(dib565);
+    else
+    {
+        FIBITMAP *dib24 = FreeImage_ConvertTo24Bits(dib565);
+        FreeImage_AdjustColors(dib24, brightness, contrast, 1.0, invert == 0 ? FALSE : TRUE);
+
+        FIBITMAP *tdib565 = FreeImage_ConvertTo16Bits565(dib24);
+        FreeImage_Unload(dib24);
+
+        FreeImage_Paste(dib565, tdib565, 0, 0, 256);
+        FreeImage_Unload(tdib565);
+    }
+}
+
 static void convert_grayscale_for_black_text(FIBITMAP *dib)
 {
     RGBQUAD rgb;
@@ -313,6 +331,7 @@ static void image_filter(FIBITMAP *dib565,const char * filterOption)
 {
     // bpp : 16
     // FREE_IMAGE_TYPE : FIT_BITMAP
+    LOGI("option : %s",filterOption);
 
     std::vector<std::string> fset;
     std::vector<std::string> argset;
@@ -327,6 +346,13 @@ static void image_filter(FIBITMAP *dib565,const char * filterOption)
         {
             uint8_t v = interpret_cast<int>(argset[1]);
             convert_grayscale_1bit(dib565,v);
+        }
+        else if(argset[0]==FILTER_ADJUST_COLOR && argset.size()==4)
+        {
+            int brightness = interpret_cast<int>(argset[1]);
+            int contrast = interpret_cast<int>(argset[2]);
+            int invert = interpret_cast<int>(argset[3]);
+            convert_adjust_colors(dib565,brightness,contrast,invert);
         }
     }
 }

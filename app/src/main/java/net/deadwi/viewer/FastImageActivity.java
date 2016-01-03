@@ -157,13 +157,27 @@ public class FastImageActivity extends AppCompatActivity
         {
             // prev
             case KeyEvent.KEYCODE_PAGE_UP:
-            //case KeyEvent.KEYCODE_VOLUME_UP:
                 previousViewPage();
                 break;
             // next
             case KeyEvent.KEYCODE_PAGE_DOWN:
-            //case KeyEvent.KEYCODE_VOLUME_DOWN:
                 nextViewPage();
+                break;
+            // back
+            case KeyEvent.KEYCODE_BACK:
+                closeViewPage();
+                break;
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                if(Option.getInstance().getVolumeButtonOption()==Option.VOLUME_BUTTON_PREV_NEXT)
+                    previousViewPage();
+                else if(Option.getInstance().getVolumeButtonOption()==Option.VOLUME_BUTTON_NEXT_PREV)
+                    nextViewPage();
+                break;
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                if(Option.getInstance().getVolumeButtonOption()==Option.VOLUME_BUTTON_PREV_NEXT)
+                    nextViewPage();
+                else if(Option.getInstance().getVolumeButtonOption()==Option.VOLUME_BUTTON_NEXT_PREV)
+                    previousViewPage();
                 break;
         }
         return true;
@@ -180,7 +194,7 @@ public class FastImageActivity extends AppCompatActivity
         pageControl.findViewById(R.id.buttonOption).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(FastImageActivity.this, OptionActivity.class);
+                Intent myIntent = new Intent(FastImageActivity.this, OptionTabActivity.class);
                 startActivity(myIntent);
                 overridePendingTransition(0, 0);
             }

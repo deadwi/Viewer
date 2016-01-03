@@ -29,9 +29,6 @@ import java.util.List;
 
 public class OptionTabActivity extends AppCompatActivity
 {
-    protected static final int GRAY_MIN_VALUE=100;
-    protected static final int GRAY_MAX_VALUE=255;
-
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -59,6 +56,18 @@ public class OptionTabActivity extends AppCompatActivity
                 return true;
             }
         });
+        mViewPager.setPageTransformer(false, new ViewPager.PageTransformer() {
+            @Override
+            public void transformPage(View view, float position) {
+                if (position < 0) {
+                    view.setScrollX((int) ((float) (view.getWidth()) * position));
+                } else if (position > 0) {
+                    view.setScrollX(-(int) ((float) (view.getWidth()) * -position));
+                } else {
+                    view.setScrollX(0);
+                }
+            }
+        });
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
@@ -79,8 +88,6 @@ public class OptionTabActivity extends AppCompatActivity
                 overridePendingTransition(0, 0);
             }
         });
-
-        //setUIFromOption();
     }
 
     @Override
@@ -101,13 +108,15 @@ public class OptionTabActivity extends AppCompatActivity
         @Override
         public Fragment getItem(int position)
         {
-            return Fragment.instantiate(getBaseContext(), OptionBasicFragment.class.getName());
+            if(position==0)
+                return Fragment.instantiate(getBaseContext(), OptionBasicFragment.class.getName());
+            return Fragment.instantiate(getBaseContext(), OptionImageFragment.class.getName());
         }
 
         @Override
         public int getCount()
         {
-            return 3;
+            return 2;
         }
 
         @Override
@@ -115,11 +124,9 @@ public class OptionTabActivity extends AppCompatActivity
         {
             switch (position) {
                 case 0:
-                    return "SECTION 1";
+                    return "BASIC";
                 case 1:
-                    return "SECTION 2";
-                case 2:
-                    return "SECTION 3";
+                    return "IMAGE";
             }
             return null;
         }
@@ -133,6 +140,10 @@ public class OptionTabActivity extends AppCompatActivity
             if(f instanceof OptionBasicFragment)
             {
                 ((OptionBasicFragment) f).setOptionFromUI(f.getView());
+            }
+            else if(f instanceof OptionImageFragment)
+            {
+                ((OptionImageFragment) f).setOptionFromUI(f.getView());
             }
         }
 
