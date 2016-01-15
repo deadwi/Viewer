@@ -214,6 +214,11 @@ public class FileManager
                 lowerString.endsWith(".tif") ||
                 lowerString.endsWith(".gif");
     }
+    static public boolean isPdfFile(String path)
+    {
+        String lowerString = path.toLowerCase();
+        return lowerString.toLowerCase().endsWith(".pdf");
+    }
 
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {

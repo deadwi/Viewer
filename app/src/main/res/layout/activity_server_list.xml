@@ -1,0 +1,157 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="#ffffff"
+    tools:context=".FullscreenActivity"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:id="@+id/touchInterceptor">
+
+    <!-- The primary full-screen view. This can be replaced with whatever view
+         is needed to present your content, e.g. VideoView, SurfaceView,
+         TextureView, etc. -->
+
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows. -->
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="left|top"
+        android:weightSum="1"
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp" >
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.01"
+            android:layout_gravity="center_horizontal" >
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_SERVER_LIST"
+                android:id="@+id/buttonServerList"
+                android:focusableInTouchMode="false"
+                android:layout_weight="1" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/BUTTON_PROGRESS"
+                android:id="@+id/buttonProgress"
+                android:focusableInTouchMode="false"
+                android:layout_weight="1" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/buttonClose"
+                android:text="@string/BUTTON_CLOSE"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.01"
+            android:layout_gravity="center_horizontal" >
+
+            <EditText
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:id="@+id/editText"
+                android:layout_weight="1"
+                android:inputType="none"
+                android:autoText="false"
+                android:background="@drawable/border"
+                android:editable="true"
+                android:hint="@string/TEXT_SEARCH"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_CHECK_ALL"
+                android:id="@+id/buttonCheckAll"
+                android:textSize="13sp" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_UNCHECK_ALL"
+                android:id="@+id/buttonUncheckAll"
+                android:focusableInTouchMode="false"
+                android:textSize="13sp" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:text="@string/BUTTON_DOWN"
+                android:id="@+id/buttonDown"
+                android:focusableInTouchMode="false" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0.01" >
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Medium Text"
+                android:id="@+id/textCurrentName"
+                android:layout_weight="1"
+                android:background="@drawable/border"
+                android:singleLine="true"
+                android:gravity="center|center_vertical"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:textColor="@android:color/black" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_UP"
+                android:id="@+id/buttonUpFolder"
+                android:layout_marginTop="-5dp" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_PREV_PAGE"
+                android:id="@+id/buttonPrevPage"
+                android:layout_marginTop="-5dp" />
+
+            <Button
+                android:layout_width="90dp"
+                android:layout_height="match_parent"
+                android:text="@string/BUTTON_NEXT_PAGE"
+                android:id="@+id/buttonNextPage"
+                android:layout_marginTop="-5dp" />
+        </LinearLayout>
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/listView"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/border"
+            android:padding="10dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+</FrameLayout>

@@ -3,6 +3,7 @@ package net.deadwi.viewer;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.net.Uri;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -36,9 +37,13 @@ public class FullscreenActivity extends AppCompatActivity
     public static final int EVENT_NEXT_PATH = 1002;
     public static final int EVENT_VIEW_FILE = 1003;
     public static final int EVENT_OPEN_FILE = 1004;
+    public static final String VIEW_TYPE_IMAGE = "image";
+    public static final String VIEW_TYPE_PDF = "pdf";
+
     public static final String MSG_DATA_NAME = "name";
     public static final String MSG_DATA_PATH = "path";
     public static final String MSG_DATA_ZIP_PATH = "zip_path";
+    public static final String MSG_DATA_VIEW_TYPE = "view_type";
     public static final String MSG_DATA_VIEW_FILE = "view_file";
     public static final String MSG_DATA_VIEW_INDEX = "view_index";
     public static final String MSG_DATA_FILES = "files";
@@ -280,6 +285,14 @@ public class FullscreenActivity extends AppCompatActivity
                         Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_NO_IMAGE, Toast.LENGTH_SHORT).show();
                     }
                 }
+                else if(fileManager.isPdfFile(name))
+                {
+                    String path = msg.getData().getString(MSG_DATA_PATH);
+                    if(path.endsWith("/")==false)
+                        path += "/";
+                    path += msg.getData().getString(MSG_DATA_NAME);
+                    viewPdf(path, 0, 0);
+                }
                 break;
             case EVENT_OPEN_FILE:
                 if(msg.getData().getString(MSG_DATA_ZIP_PATH)!=null)
@@ -371,12 +384,25 @@ public class FullscreenActivity extends AppCompatActivity
             i++;
         }
 
+        myIntent.putExtra(MSG_DATA_VIEW_TYPE, VIEW_TYPE_IMAGE);
         myIntent.putExtra(MSG_DATA_PATH, fullPath);
         myIntent.putExtra(MSG_DATA_ZIP_PATH, zipPath);
         myIntent.putExtra(MSG_DATA_FILES, pathArray);
         myIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
 
         startActivity(myIntent);
+        overridePendingTransition(0, 0);
+        return true;
+    }
+
+    private boolean viewPdf(String path, int fileIndex, int viewIndex)
+    {
+        Intent pdfIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
+        pdfIntent.putExtra(MSG_DATA_VIEW_TYPE, VIEW_TYPE_PDF);
+        pdfIntent.putExtra(MSG_DATA_PATH, path);
+        pdfIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
+
+        startActivity(pdfIntent);
         overridePendingTransition(0, 0);
         return true;
     }
