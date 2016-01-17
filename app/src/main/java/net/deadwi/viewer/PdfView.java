@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 
+import net.deadwi.library.FreeImageWrapper;
+
 import org.vudroid.core.DecodeService;
 import org.vudroid.core.DecodeServiceBase;
 import org.vudroid.core.codec.CodecPage;
@@ -22,6 +24,9 @@ import java.io.File;
 @SuppressLint("ViewConstructor")
 public class PdfView extends FastView
 {
+    public static final int RET_UNKNOWN_ERROR = -1;
+    public static final int RET_DECRYPT_PDF = -2;
+
     private boolean isBitmap1Out = true;
     private Object lock = new Object();
     private Bitmap mBitmap1;
@@ -103,10 +108,20 @@ public class PdfView extends FastView
 
     public int openPdfFile(String path)
     {
-        decodeService = new DecodeServiceBase(new PdfContext());
-        decodeService.setContentResolver(getContext().getContentResolver());
-        decodeService.open(Uri.fromFile(new File(path)));
-        return decodeService.getPageCount();
+        int ret = RET_UNKNOWN_ERROR;
+        try
+        {
+            decodeService = new DecodeServiceBase(new PdfContext());
+            decodeService.setContentResolver(getContext().getContentResolver());
+            decodeService.open(Uri.fromFile(new File(path)));
+            return decodeService.getPageCount();
+        }
+        catch (RuntimeException ex)
+        {
+            if(ex.getMessage().indexOf("decrypt")>=0)
+                ret = RET_DECRYPT_PDF;
+        }
+        return ret;
     }
 
     public int drawImage(int pageIndex)
@@ -116,10 +131,20 @@ public class PdfView extends FastView
         int viewHeight = mBitmap1.getHeight();
         int pageWidth = page.getWidth();
         int pageHeight = page.getHeight();
-        RectF pageRelativeBounds = new RectF(0.0f, 0.0f, 1.0f, 1.0f);
+        int[] areaSet = FreeImageWrapper.getOutputImageArea(false, 0, getOptionViewMode(), optionResizeMode(), pageWidth, pageHeight, viewWidth, viewHeight);
+        RectF pageRelativeBounds = new RectF(
+                areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X]/pageWidth,
+                areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y]/pageHeight,
+                areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X2]/pageWidth,
+                areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y2]/pageHeight
+        );
+
         if(mOutBitmap!=null)
             mOutBitmap.recycle();
-        mOutBitmap = page.renderBitmap(viewWidth, viewHeight, pageRelativeBounds);
+        mOutBitmap = page.renderBitmap(
+                areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_WIDTH],
+                areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_HEIGHT],
+                pageRelativeBounds);
         postInvalidate();
 
         Log.d("PDF", "out size : " + mOutBitmap.getWidth() + " " + mOutBitmap.getHeight());

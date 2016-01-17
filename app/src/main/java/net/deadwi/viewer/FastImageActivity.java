@@ -60,6 +60,17 @@ public class FastImageActivity extends AppCompatActivity
             fastView = new PdfView(this, width, height);
             pc = new PdfViewPageController((PdfView)fastView,
                     getIntent().getStringExtra(FullscreenActivity.MSG_DATA_PATH));
+            int ret = pc.getPageCount();
+            if(ret<=0)
+            {
+                if(ret==0)
+                    Toast.makeText(this.getApplicationContext(), "The PDF file has no pages", Toast.LENGTH_SHORT).show();
+                else if(ret==PdfView.RET_DECRYPT_PDF)
+                    Toast.makeText(this.getApplicationContext(), "Does not support Decrypt PDF", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(this.getApplicationContext(), "Cannot open the PDF file.(Unknown error)", Toast.LENGTH_SHORT).show();
+                closeViewPage(false);
+            }
         }
 
         currntFileIndex = pc.getStartPageIndex();
@@ -89,7 +100,7 @@ public class FastImageActivity extends AppCompatActivity
                             previousViewPage();
                     }
                     else if (event.getY() < (height / 4))
-                        closeViewPage();
+                        closeViewPage(true);
                     else if (event.getY() > (height / 4 * 3))
                     {
                         setPageControlPage(currntFileIndex, pc.getPageCount());
@@ -159,7 +170,7 @@ public class FastImageActivity extends AppCompatActivity
                 break;
             // back
             case KeyEvent.KEYCODE_BACK:
-                closeViewPage();
+                closeViewPage(true);
                 break;
             case KeyEvent.KEYCODE_MENU:
                 setPageControlPage(currntFileIndex, pc.getPageCount());
@@ -201,7 +212,7 @@ public class FastImageActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 pageControl.dismiss();
-                closeViewPage();
+                closeViewPage(true);
             }
         });
         ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -290,9 +301,10 @@ public class FastImageActivity extends AppCompatActivity
             previousPage();
     }
 
-    private void closeViewPage()
+    private void closeViewPage(boolean save)
     {
-        pc.saveBookmark(currntFileIndex, fastView.getViewIndex());
+        if(save)
+            pc.saveBookmark(currntFileIndex, fastView.getViewIndex());
         finish();
         overridePendingTransition(0, 0);
     }

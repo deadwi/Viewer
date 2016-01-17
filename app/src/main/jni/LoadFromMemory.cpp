@@ -122,7 +122,7 @@ static void copy_pixels_flip_vertical(void* to, AndroidBitmapInfo*  info, void* 
 
     for (int yy = 0; yy < fromHeight; yy++)
     {
-        memcpy((uint16_t*)toRow+x,fromRow,fromStride);
+        memcpy((uint16_t*)toRow+x,fromRow,fromWidth*sizeof(uint16_t));
         fromRow = fromRow + fromStride;
         toRow = toRow - info->stride;
     }
@@ -426,50 +426,36 @@ static void image_out(JNIEnv *env, jobject bitmap, FIBITMAP *dib)
     LOGI("image_out ms : %g",now_ms()-starttime);
 }
 
-static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int resizeMethod, bool isLastPage, int viewIndex, double nextGapRate=0.1,const char * filterOption=NULL)
+static void get_output_image_area(const int viewMode, const int resizeMode,
+                                  const bool isLastPage, const int viewIndex, const double nextGapRate,
+                                  const unsigned int srcWidth, const unsigned int srcHeight,
+                                  const unsigned int viewWidth, const unsigned int viewHeight,
+                                  unsigned int& resizeWidth, unsigned int& resizeHeight,
+                                  unsigned int& originX, unsigned int& originY,
+                                  unsigned int& originX2, unsigned int& originY2,
+                                  unsigned int& displayX, unsigned int& displayY,
+                                  int& viewCount, bool& isDoublePage)
 {
-    int status = -1;
-    AndroidBitmapInfo info;
-    void* pixels;
-    int ret;
-    double starttime = now_ms();
-
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
-    {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-        return status;
-    }
-    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
-    {
-        LOGE("Bitmap format is not RGB_565 !");
-        return status;
-    }
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
-    {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-        return status;
-    }
-
-    unsigned int originWidth = FreeImage_GetWidth(dib);
-    unsigned int originHeight = FreeImage_GetHeight(dib);
-    double originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
-    double displayRate = static_cast<double>(info.width)/static_cast<double>(info.height);
-    LOGI("origin size : %d %d", originWidth, originHeight);
-
-    unsigned int resizeWidth = 0;
-    unsigned int resizeHeight = 0;
-    unsigned int originX = 0;
-    unsigned int originY = 0;
-    unsigned int originX2 = 0;
-    unsigned int originY2 = 0;
-    unsigned int displayX = 0;
-    unsigned int displayY = 0;
+    resizeWidth = 0;
+    resizeHeight = 0;
+    originX = 0;
+    originY = 0;
+    originX2 = 0;
+    originY2 = 0;
+    displayX = 0;
+    displayY = 0;
+    viewCount=1;
+    isDoublePage = false;
 
     bool isLeftPageFirst = true;
-    bool isDoublePage = false;
+    unsigned int originWidth = srcWidth;
+    unsigned int originHeight = srcHeight;
+    double originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
+    double displayRate = static_cast<double>(viewWidth)/static_cast<double>(viewHeight);
+    LOGI("origin size : %d %d", originWidth, originHeight);
 
     if( ((viewMode==VIEW_MODE_AUTO_L || viewMode==VIEW_MODE_AUTO_R) && originRate>1.1) ||
-            (viewMode==VIEW_MODE_DOUBLE_L || viewMode==VIEW_MODE_DOUBLE_R) )
+        (viewMode==VIEW_MODE_DOUBLE_L || viewMode==VIEW_MODE_DOUBLE_R) )
     {
         originWidth /= 2;
         originRate = static_cast<double>(originWidth)/static_cast<double>(originHeight);
@@ -482,54 +468,53 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     if(resizeMode==RESIZE_MODE_FULL_RATE)
     {
         if (displayRate > originRate) {
-            // originWidth : originHeight = width : info.height
-            // width = originWidth * info.height / originHeight
-            resizeWidth = info.height * originRate;
-            resizeHeight = info.height;
-            displayX = (info.width - resizeWidth) / 2;
+            // originWidth : originHeight = width : viewHeight
+            // width = originWidth * viewHeight / originHeight
+            resizeWidth = viewHeight * originRate;
+            resizeHeight = viewHeight;
+            displayX = (viewWidth - resizeWidth) / 2;
             displayY = 0;
         }
         else {
-            // originWidth : originHeight = info.width : height
-            // height = originHeight * info.width / originWidth
-            resizeWidth = info.width;
-            resizeHeight = info.width / originRate;
+            // originWidth : originHeight = viewWidth : height
+            // height = originHeight * viewWidth / originWidth
+            resizeWidth = viewWidth;
+            resizeHeight = viewWidth / originRate;
             displayX = 0;
-            displayY = (info.height - resizeHeight) / 2;
+            displayY = (viewHeight - resizeHeight) / 2;
         }
     }
     else if(resizeMode==RESIZE_MODE_WIDTH_RATE)
     {
-        resizeWidth = info.width;
-        resizeHeight = info.width / originRate;
+        resizeWidth = viewWidth;
+        resizeHeight = viewWidth / originRate;
         displayX = 0;
-        displayY = (info.height - resizeHeight) / 2;
+        displayY = (viewHeight - resizeHeight) / 2;
     }
     else if(resizeMode==RESIZE_MODE_HEIGHT_RATE)
     {
-        resizeWidth = info.height * originRate;
-        resizeHeight = info.height;
-        displayX = (info.width - resizeWidth) / 2;
+        resizeWidth = viewHeight * originRate;
+        resizeHeight = viewHeight;
+        displayX = (viewWidth - resizeWidth) / 2;
         displayY = 0;
     }
     else
     {
-        resizeWidth = info.width;
-        resizeHeight = info.height;
+        resizeWidth = viewWidth;
+        resizeHeight = viewHeight;
         displayX = 0;
         displayY = 0;
     }
 
-    LOGI("Out resize : %d %d in (%d %d)", resizeWidth, resizeHeight, info.width, info.height);
+    LOGI("Out resize : %d %d in (%d %d)", resizeWidth, resizeHeight, viewWidth, viewHeight);
 
-    int viewCount=1;
     originX2 = originWidth;
     originY2 = originHeight;
-    if(resizeHeight>info.height) // RESIZE_MODE_WIDTH_RATE
+    if(resizeHeight>viewHeight) // RESIZE_MODE_WIDTH_RATE
     {
-        double originViewHeight = static_cast<double>(info.height) * (static_cast<double>(originWidth)/static_cast<double>(info.width));
-        viewCount = ceil( static_cast<double>(resizeHeight) / ((1.0-nextGapRate)*info.height) );
-        resizeHeight = info.height;
+        double originViewHeight = static_cast<double>(viewHeight) * (static_cast<double>(originWidth)/static_cast<double>(viewWidth));
+        viewCount = ceil( static_cast<double>(resizeHeight) / ((1.0-nextGapRate)*viewHeight) );
+        resizeHeight = viewHeight;
 
         displayX = 0;
         displayY = 0;
@@ -541,11 +526,11 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
             originY2 = originHeight;
         }
     }
-    else if(resizeWidth>info.width) // RESIZE_MODE_HEIGHT_RATE
+    else if(resizeWidth>viewWidth) // RESIZE_MODE_HEIGHT_RATE
     {
-        double originViewWidth = static_cast<double>(info.width) * (static_cast<double>(originHeight)/static_cast<double>(info.height));
-        viewCount = ceil(static_cast<double>(resizeWidth) / ((1.0-nextGapRate)*info.width) );
-        resizeWidth = info.width;
+        double originViewWidth = static_cast<double>(viewWidth) * (static_cast<double>(originHeight)/static_cast<double>(viewHeight));
+        viewCount = ceil(static_cast<double>(resizeWidth) / ((1.0-nextGapRate)*viewWidth) );
+        resizeWidth = viewWidth;
 
         displayX = 0;
         displayY = 0;
@@ -573,6 +558,49 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
     }
 
     LOGI("origin xy-xy : %d %d %d %d (last : %d)", originX, originY, originX2, originY2, (isLastPage ? 1 : 0));
+}
+
+static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, int resizeMode, int resizeMethod, bool isLastPage, int viewIndex, double nextGapRate=0.1,const char * filterOption=NULL)
+{
+    int status = -1;
+    AndroidBitmapInfo info;
+    void* pixels;
+    int ret;
+    double starttime = now_ms();
+
+    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
+    {
+        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        return status;
+    }
+    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
+    {
+        LOGE("Bitmap format is not RGB_565 !");
+        return status;
+    }
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
+    {
+        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        return status;
+    }
+
+    unsigned int resizeWidth = 0;
+    unsigned int resizeHeight = 0;
+    unsigned int originX = 0;
+    unsigned int originY = 0;
+    unsigned int originX2 = 0;
+    unsigned int originY2 = 0;
+    unsigned int displayX = 0;
+    unsigned int displayY = 0;
+    int viewCount = 1;
+    bool isDoublePage = false;
+    get_output_image_area(viewMode, resizeMode, isLastPage, viewIndex, nextGapRate,
+                          FreeImage_GetWidth(dib), FreeImage_GetHeight(dib),
+                          info.width, info.height,
+                          resizeWidth, resizeHeight, // output
+                          originX, originY, originX2, originY2,
+                          displayX, displayY,
+                          viewCount, isDoublePage);
 
     FIBITMAP *rescaled = FreeImage_RescaleRect(dib, resizeWidth, resizeHeight, originX, originY, originX2, originY2, (FREE_IMAGE_FILTER)resizeMethod);
     FreeImage_Unload(dib);
@@ -720,6 +748,44 @@ JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_loadImageFromZip
     env->ReleaseStringUTFChars(zipfileStr, zipfilename);
     env->ReleaseStringUTFChars(filterStr, filterOption);
     return status;
+}
+
+JNIEXPORT jintArray JNICALL Java_net_deadwi_library_FreeImageWrapper_getOutputImageArea(JNIEnv *env, jobject obj, jboolean isLastPage, jint viewIndex,
+                                                                                   int optionViewMode, int optionResizeMode,
+                                                                                   int srcWidth, int srcHeight, int viewWidth, int viewHeight )
+{
+    unsigned int resizeWidth = 0;
+    unsigned int resizeHeight = 0;
+    unsigned int originX = 0;
+    unsigned int originY = 0;
+    unsigned int originX2 = 0;
+    unsigned int originY2 = 0;
+    unsigned int displayX = 0;
+    unsigned int displayY = 0;
+    int viewCount = 1;
+    bool isDoublePage = false;
+    get_output_image_area(optionViewMode, optionResizeMode, isLastPage, viewIndex, 0.1,
+                          srcWidth, srcHeight,
+                          viewWidth, viewHeight,
+                          resizeWidth, resizeHeight, // output
+                          originX, originY, originX2, originY2,
+                          displayX, displayY,
+                          viewCount, isDoublePage);
+    jintArray retArr = env->NewIntArray(10);
+    int i=0;
+    int array[10];
+    array[i++] = resizeWidth;
+    array[i++] = resizeHeight;
+    array[i++] = originX;
+    array[i++] = originY;
+    array[i++] = originX2;
+    array[i++] = originY2;
+    array[i++] = displayX;
+    array[i++] = displayY;
+    array[i++] = viewCount;
+    array[i++] = isDoublePage ? 1 : 0;
+    env->SetIntArrayRegion(retArr, 0, 10, array);
+    return retArr;
 }
 
 #ifdef __cplusplus
