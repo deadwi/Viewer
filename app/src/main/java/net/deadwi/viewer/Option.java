@@ -43,11 +43,14 @@ public class Option {
     private int touchOption;
     private int volumeButtonOption;
     private int displayOption;
+    private int einkCleanOption;
     private int resizeMethodOption;
     private boolean isEnableColorBrightness;
     private int colorBrightnessValue;
     private boolean isEnableColorContrast;
     private int colorContrastValue;
+    private boolean isEnableColorGamma;
+    private double colorGammaValue;
     private boolean isEnableColorInvert;
     private boolean isEnableFilterGray;
     private int filterGrayThreshold;
@@ -78,12 +81,15 @@ public class Option {
         touchOption = TOUCH_AUTO;
         volumeButtonOption = VOLUME_BUTTON_DISABLE;
         displayOption = DISPLAY_FIT;
+        einkCleanOption = 0;
         resizeMethodOption = RESIZE_METHOD_BILINEAR;
 
         isEnableColorBrightness=false;
         colorBrightnessValue=0;
         isEnableColorContrast=false;
         colorContrastValue=0;
+        isEnableColorGamma=false;
+        colorGammaValue=1.0;
         isEnableColorInvert=false;
         isEnableFilterGray=false;
         filterGrayThreshold=255;
@@ -113,12 +119,15 @@ public class Option {
         volumeButtonOption = Integer.parseInt(optionProperties.getProperty("option_volume_button",""+VOLUME_BUTTON_DISABLE));
         splitOption = Integer.parseInt(optionProperties.getProperty("option_split",""+SPLIT_AUTO));
         displayOption = Integer.parseInt(optionProperties.getProperty("option_display",""+DISPLAY_FIT));
+        einkCleanOption = Integer.parseInt(optionProperties.getProperty("option_eink_clean","0"));
         resizeMethodOption = Integer.parseInt(optionProperties.getProperty("option_resize_method",""+RESIZE_METHOD_BILINEAR));
 
         isEnableColorBrightness = optionProperties.getProperty("option_color_is_brightness","false").compareTo("true")==0;
         colorBrightnessValue = Integer.parseInt(optionProperties.getProperty("option_color_brightness","0"));
         isEnableColorContrast = optionProperties.getProperty("option_color_is_contrast","false").compareTo("true")==0;
         colorContrastValue = Integer.parseInt(optionProperties.getProperty("option_color_contrast","0"));
+        isEnableColorGamma = optionProperties.getProperty("option_color_is_gamma","false").compareTo("true")==0;
+        colorGammaValue = Double.parseDouble(optionProperties.getProperty("option_color_gamma", "1.0"));
         isEnableColorInvert = optionProperties.getProperty("option_color_is_invert","false").compareTo("true")==0;
         isEnableFilterGray = optionProperties.getProperty("option_filter_is_gray","false").compareTo("true")==0;
         filterGrayThreshold = Integer.parseInt(optionProperties.getProperty("option_filter_gray","255"));
@@ -139,12 +148,15 @@ public class Option {
         optionProperties.setProperty("option_volume_button",""+volumeButtonOption);
         optionProperties.setProperty("option_split",""+splitOption);
         optionProperties.setProperty("option_display",""+displayOption);
+        optionProperties.setProperty("option_eink_clean",""+einkCleanOption);
         optionProperties.setProperty("option_resize_method", "" + resizeMethodOption);
 
         optionProperties.setProperty("option_color_is_brightness",(isEnableColorBrightness ? "true" : "false"));
         optionProperties.setProperty("option_color_brightness",""+colorBrightnessValue);
         optionProperties.setProperty("option_color_is_contrast",(isEnableColorContrast ? "true" : "false"));
         optionProperties.setProperty("option_color_contrast",""+colorContrastValue);
+        optionProperties.setProperty("option_color_is_gamma",(isEnableColorGamma ? "true" : "false"));
+        optionProperties.setProperty("option_color_gamma",""+colorGammaValue);
         optionProperties.setProperty("option_color_is_invert",(isEnableColorInvert ? "true" : "false"));
         optionProperties.setProperty("option_filter_is_gray",(isEnableFilterGray ? "true" : "false"));
         optionProperties.setProperty("option_filter_gray",""+filterGrayThreshold);
@@ -214,10 +226,11 @@ public class Option {
     public String getFilterOption()
     {
         String optionStr = "";
-        if(isEnableColorBrightness || isEnableColorContrast || isEnableColorInvert )
+        if(isEnableColorBrightness || isEnableColorContrast || isEnableColorGamma || isEnableColorInvert )
             optionStr += FreeImageWrapper.FILTER_ADJUST_COLOR
                     + "|" + (isEnableColorBrightness ? colorBrightnessValue : "0")
                     + "|" + (isEnableColorContrast ? colorContrastValue : "0")
+                    + "|" + (isEnableColorGamma ? colorGammaValue : "1.0")
                     + "|" + (isEnableColorInvert ? "1" : "0")
                     + " ";
         if(isEnableFilterGray)
@@ -282,6 +295,14 @@ public class Option {
     {
         displayOption = option;
     }
+    public int getEinkCleanOption()
+    {
+        return einkCleanOption;
+    }
+    public void setEinkCleanOption(int option)
+    {
+        einkCleanOption = option;
+    }
     public int getResizeMethodOption()
     {
         return resizeMethodOption;
@@ -300,6 +321,11 @@ public class Option {
     public void setEnableColorContrast(boolean enable) { isEnableColorContrast = enable; }
     public int getColorContrastValue() { return colorContrastValue; }
     public void setColorContrastValue(int threshold) { colorContrastValue = threshold; }
+
+    public boolean IsEnableColorGamma() { return isEnableColorGamma; }
+    public void setEnableColorGamma(boolean enable) { isEnableColorGamma = enable; }
+    public double getColorGammaValue() { return colorGammaValue; }
+    public void setColorGammaValue(double threshold) { colorGammaValue = threshold; }
 
     public boolean IsEnableColorInvert() { return isEnableColorInvert; }
     public void setEnableColorInvert(boolean enable) { isEnableColorInvert = enable; }

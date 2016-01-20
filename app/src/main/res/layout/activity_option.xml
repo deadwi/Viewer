@@ -270,6 +270,56 @@
 
         </TableRow>
 
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Eink Clean"
+                android:id="@+id/textView11"
+                android:layout_column="1"
+                android:layout_weight="1" />
+
+            <RadioGroup
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="4"
+                android:orientation="horizontal" >
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="None"
+                    android:id="@+id/radioButtonEink0"
+                    android:layout_column="5" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1Page"
+                    android:id="@+id/radioButtonEink1"
+                    android:layout_column="7" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5Page"
+                    android:id="@+id/radioButtonEink5"
+                    android:layout_column="8" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10Page"
+                    android:id="@+id/radioButtonEink10"
+                    android:layout_column="8" />
+            </RadioGroup>
+        </TableRow>
+
         <TextView
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

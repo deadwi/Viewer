@@ -23,6 +23,7 @@ public class OptionImageFragment extends Fragment
     protected static final int CONTRAST_MAX_VALUE=100;
     protected static final int GRAY_MIN_VALUE=100;
     protected static final int GRAY_MAX_VALUE=255;
+    protected static final int GAMMA_MAX_SEEK=100;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState)
@@ -39,7 +40,8 @@ public class OptionImageFragment extends Fragment
         ((SeekBar)view.findViewById(R.id.seekBrightness)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                setSeekColorValue(getView(), R.id.seekBrightness, R.id.textBrightnessValue, progress, BRIGHTNESS_MAX_VALUE - BRIGHTNESS_MIN_VALUE);
+                setSeekColorValue(getView(), R.id.seekBrightness, R.id.textBrightnessValue, progress, BRIGHTNESS_MAX_VALUE - BRIGHTNESS_MIN_VALUE,
+                        "" + (progress + BRIGHTNESS_MIN_VALUE));
             }
 
             @Override
@@ -60,7 +62,28 @@ public class OptionImageFragment extends Fragment
         ((SeekBar)view.findViewById(R.id.seekContrast)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                setSeekColorValue(getView(), R.id.seekContrast, R.id.textContrastValue, progress, CONTRAST_MAX_VALUE - CONTRAST_MIN_VALUE);
+                setSeekColorValue(getView(), R.id.seekContrast, R.id.textContrastValue, progress, CONTRAST_MAX_VALUE - CONTRAST_MIN_VALUE,
+                        "" + (progress + CONTRAST_MIN_VALUE));
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        view.findViewById(R.id.checkBoxGamma).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ((SeekBar) getView().findViewById(R.id.seekGamma)).setEnabled(((CheckBox) getView().findViewById(R.id.checkBoxGamma)).isChecked());
+            }
+        });
+        ((SeekBar)view.findViewById(R.id.seekGamma)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                setSeekColorValue(getView(), R.id.seekGamma, R.id.textGammaValue, progress, GAMMA_MAX_SEEK,
+                        String.format("%.2f", getGammaValueFromSeekProgress(progress)));
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -103,11 +126,33 @@ public class OptionImageFragment extends Fragment
             ((TextView)view.findViewById(R.id.textGrayThreshold)).setText("" + v);
     }
 
-    private void setSeekColorValue(View view, int seekId, int textId, int v, int max)
+    private void setSeekColorValue(View view, int seekId, int textId, int v, int max, String output)
     {
         ((SeekBar)view.findViewById(seekId)).setMax(max);
         ((SeekBar)view.findViewById(seekId)).setProgress(v);
-        ((TextView)view.findViewById(textId)).setText("" + (v+BRIGHTNESS_MIN_VALUE));
+        ((TextView)view.findViewById(textId)).setText(output);
+    }
+
+    private int getSeekProgressFromGammaValue(double gamma)
+    {
+        if(gamma == 1.0)
+            return GAMMA_MAX_SEEK/2;
+        else if(gamma < 1.0)
+            // 0.0 ~ 1.0 => 0 ~ GAMMA_MAX_SEEK/2
+            return (int)Math.round(gamma*(double)(GAMMA_MAX_SEEK/2));
+        // 1.0 ~ 4.0 => GAMMA_MAX_SEEK/2 ~ GAMMA_MAX_SEEK
+        return GAMMA_MAX_SEEK/2 + (int)Math.round((gamma-1.0)/4.0*(double)(GAMMA_MAX_SEEK/2));
+    }
+
+    private double getGammaValueFromSeekProgress(int progress)
+    {
+        if(progress == GAMMA_MAX_SEEK/2)
+            return 1.0;
+        // 0.0 ~ 1.0
+        else if(progress < GAMMA_MAX_SEEK/2)
+            return Math.round((double)progress/(double)(GAMMA_MAX_SEEK/2)*100)/100.0;
+        // 1.0 ~ 4.0
+        return Math.round((double)(progress-GAMMA_MAX_SEEK/2)/(double)(GAMMA_MAX_SEEK/2)*300)/100.0 + 1.0;
     }
 
     private void setUIFromOption(View view)
@@ -146,7 +191,8 @@ public class OptionImageFragment extends Fragment
         v = Option.getInstance().getColorBrightnessValue();
         if(v<BRIGHTNESS_MIN_VALUE)
             v = 0;
-        setSeekColorValue(view, R.id.seekBrightness, R.id.textBrightnessValue, v - BRIGHTNESS_MIN_VALUE, BRIGHTNESS_MAX_VALUE - BRIGHTNESS_MIN_VALUE);
+        setSeekColorValue(view, R.id.seekBrightness, R.id.textBrightnessValue, v - BRIGHTNESS_MIN_VALUE, BRIGHTNESS_MAX_VALUE - BRIGHTNESS_MIN_VALUE,
+                "" + v);
 
         if(Option.getInstance().IsEnableColorContrast())
         {
@@ -161,7 +207,21 @@ public class OptionImageFragment extends Fragment
         v = Option.getInstance().getColorContrastValue();
         if(v<CONTRAST_MIN_VALUE)
             v = 0;
-        setSeekColorValue(view, R.id.seekContrast, R.id.textContrastValue, v - CONTRAST_MIN_VALUE, CONTRAST_MAX_VALUE - CONTRAST_MIN_VALUE);
+        setSeekColorValue(view, R.id.seekContrast, R.id.textContrastValue, v - CONTRAST_MIN_VALUE, CONTRAST_MAX_VALUE - CONTRAST_MIN_VALUE,
+                "" + v);
+
+        if(Option.getInstance().IsEnableColorGamma())
+        {
+            ((SeekBar)view.findViewById(R.id.seekGamma)).setEnabled(true);
+            ((CheckBox)view.findViewById(R.id.checkBoxGamma)).setChecked(true);
+        }
+        else
+        {
+            ((SeekBar)view.findViewById(R.id.seekGamma)).setEnabled(false);
+            ((CheckBox)view.findViewById(R.id.checkBoxGamma)).setChecked(false);
+        }
+        setSeekColorValue(view, R.id.seekGamma, R.id.textGammaValue, getSeekProgressFromGammaValue(Option.getInstance().getColorGammaValue()), GAMMA_MAX_SEEK,
+                String.format("%.2f",getGammaValueFromSeekProgress(getSeekProgressFromGammaValue(Option.getInstance().getColorGammaValue()))));
 
         if(Option.getInstance().IsEnableColorInvert())
         {
@@ -220,6 +280,16 @@ public class OptionImageFragment extends Fragment
         else
         {
             Option.getInstance().setEnableColorContrast(false);
+        }
+
+        if(((CheckBox)view.findViewById(R.id.checkBoxGamma)).isChecked())
+        {
+            Option.getInstance().setEnableColorGamma(true);
+            Option.getInstance().setColorGammaValue(getGammaValueFromSeekProgress(((SeekBar) view.findViewById(R.id.seekGamma)).getProgress()));
+        }
+        else
+        {
+            Option.getInstance().setEnableColorGamma(false);
         }
 
         if(((CheckBox)view.findViewById(R.id.checkBoxInvert)).isChecked())

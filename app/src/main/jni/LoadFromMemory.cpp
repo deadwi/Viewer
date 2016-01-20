@@ -286,14 +286,18 @@ static void convert_grayscale_1bit(FIBITMAP *dib565, uint8_t threshold)
     }
 }
 
-static void convert_adjust_colors(FIBITMAP *dib565, int brightness, int contrast, int invert)
+static void convert_adjust_colors(FIBITMAP *dib565, int brightness, int contrast, double gamma, int invert)
 {
-    if(brightness==0 && contrast==0 && invert!=0)
+    LOGI("adjust colors : b=%d c=%d g=%g i=%d", brightness, contrast, gamma, invert);
+    if(brightness==0 && contrast==0 && gamma==1.0 && invert!=0)
         FreeImage_Invert(dib565);
     else
     {
+        if(gamma==0)
+            gamma = 0.01;
+
         FIBITMAP *dib24 = FreeImage_ConvertTo24Bits(dib565);
-        FreeImage_AdjustColors(dib24, brightness, contrast, 1.0, invert == 0 ? FALSE : TRUE);
+        FreeImage_AdjustColors(dib24, brightness, contrast, gamma, invert == 0 ? FALSE : TRUE);
 
         FIBITMAP *tdib565 = FreeImage_ConvertTo16Bits565(dib24);
         FreeImage_Unload(dib24);
@@ -347,12 +351,13 @@ static void image_filter(FIBITMAP *dib565,const char * filterOption)
             uint8_t v = interpret_cast<int>(argset[1]);
             convert_grayscale_1bit(dib565,v);
         }
-        else if(argset[0]==FILTER_ADJUST_COLOR && argset.size()==4)
+        else if(argset[0]==FILTER_ADJUST_COLOR && argset.size()==5)
         {
             int brightness = interpret_cast<int>(argset[1]);
             int contrast = interpret_cast<int>(argset[2]);
-            int invert = interpret_cast<int>(argset[3]);
-            convert_adjust_colors(dib565,brightness,contrast,invert);
+            double gamma = interpret_cast<double>(argset[3]);
+            int invert = interpret_cast<int>(argset[4]);
+            convert_adjust_colors(dib565,brightness,contrast,gamma,invert);
         }
     }
 }

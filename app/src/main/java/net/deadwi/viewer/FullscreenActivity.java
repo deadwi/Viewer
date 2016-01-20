@@ -2,10 +2,12 @@ package net.deadwi.viewer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -208,18 +210,20 @@ public class FullscreenActivity extends AppCompatActivity
             case KeyEvent.KEYCODE_PAGE_UP:
                 //case KeyEvent.KEYCODE_VOLUME_UP:
                 goPreviousPage();
-                break;
+                return true;
             // next
             case KeyEvent.KEYCODE_PAGE_DOWN:
                 //case KeyEvent.KEYCODE_VOLUME_DOWN:
                 goNextPage();
-                break;
-            // back
-            case KeyEvent.KEYCODE_BACK:
-                goUpFolder();
-                break;
+                return true;
         }
-        return true;
+        return super.onKeyDown(keycode, event);
+    }
+
+    @Override
+    public void onBackPressed()
+    {
+        popupCloseDialog();
     }
 
     private void goUpFolder()
@@ -291,7 +295,16 @@ public class FullscreenActivity extends AppCompatActivity
                     if(path.endsWith("/")==false)
                         path += "/";
                     path += msg.getData().getString(MSG_DATA_NAME);
-                    viewPdf(path, 0, 0);
+
+                    String viewName = null;
+                    int viewIndex = 0;
+                    // load by bookmark
+                    if(msg.getData().containsKey(MSG_DATA_VIEW_FILE))
+                    {
+                        viewName = msg.getData().getString(MSG_DATA_VIEW_FILE);
+                        viewIndex = msg.getData().getInt(MSG_DATA_VIEW_INDEX);
+                    }
+                    viewPdf(path, viewName, viewIndex);
                 }
                 break;
             case EVENT_OPEN_FILE:
@@ -395,11 +408,12 @@ public class FullscreenActivity extends AppCompatActivity
         return true;
     }
 
-    private boolean viewPdf(String path, int fileIndex, int viewIndex)
+    private boolean viewPdf(String path, String viewName, int viewIndex)
     {
         Intent pdfIntent = new Intent(FullscreenActivity.this, FastImageActivity.class);
         pdfIntent.putExtra(MSG_DATA_VIEW_TYPE, VIEW_TYPE_PDF);
-        pdfIntent.putExtra(MSG_DATA_PATH, path);
+        pdfIntent.putExtra(MSG_DATA_ZIP_PATH, path);
+        pdfIntent.putExtra(MSG_DATA_PATH, viewName);
         pdfIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
 
         startActivity(pdfIntent);
@@ -440,5 +454,37 @@ public class FullscreenActivity extends AppCompatActivity
 
         Option.getInstance().setLastPath(fileManager.getCurrentDir(), fileManager.getCurrentInnerDir());
         Option.getInstance().saveLastPath();
+    }
+
+    private void popupCloseDialog()
+    {
+        Log.d("MAIN","call close dialog");
+        AlertDialog.Builder alt_bld = new AlertDialog.Builder(this);
+        alt_bld.setMessage("Do you want to exit the program?")
+                .setCancelable(false)
+                .setOnKeyListener(new DialogInterface.OnKeyListener() {
+                    @Override
+                    public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                        if (keyCode == KeyEvent.KEYCODE_BACK) {
+                            dialog.cancel();
+                            return true;
+                        }
+                        return false;
+                    }
+                })
+                .setPositiveButton("NO", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                })
+                .setNegativeButton("YES", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        finish();
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(0);
+                    }
+                });
+        AlertDialog alert = alt_bld.create();
+        alert.show();
     }
 }

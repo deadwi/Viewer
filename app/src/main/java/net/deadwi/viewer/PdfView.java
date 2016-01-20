@@ -89,18 +89,27 @@ class PdfViewPageController implements FastViewPageController
 {
     private PdfView fastView;
     private String path;
+    int startPageIndex;
     int pageCount;
 
-    public PdfViewPageController(PdfView _fastView, String _path)
+    public PdfViewPageController(PdfView _fastView, String _path, String startPage)
     {
         fastView = _fastView;
         path = _path;
         pageCount = fastView.openPdfFile(path);
+
+        try {
+            startPageIndex = Integer.parseInt(startPage);
+        }
+        catch (Exception e)
+        {
+            startPageIndex = 0;
+        }
     }
 
     public int getStartPageIndex()
     {
-        return 0;
+        return startPageIndex;
     }
 
     public String getTitle()
@@ -115,6 +124,15 @@ class PdfViewPageController implements FastViewPageController
 
     public void saveBookmark(int pageIndex, int viewIndex)
     {
+        String dir = FileManager.getPathFromFullpath(path, "/");
+        BookmarkItem item = new BookmarkItem();
+        item.filename = FileManager.getNameFromFullpath(path);
+        item.innerName = (pageIndex>=0 && pageIndex <= getPageCount() - 1) ? ""+pageIndex : "";
+        item.fileIndex = pageIndex<0 ? 0 : pageIndex;
+        item.fileCount = getPageCount();
+        item.viewIndex = viewIndex;
+        Bookmark.getInstance().updateBookmark(dir, item);
+        //saveLastView(null,null,0);
     }
 
     public void requestPage(int fileIndex, int viewIndex, boolean isPrev)

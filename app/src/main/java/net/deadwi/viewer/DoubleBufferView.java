@@ -4,6 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.ColorFilter;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.util.Log;
 import android.view.View;
 
@@ -19,6 +22,9 @@ abstract class DoubleBufferView extends FastView implements Runnable
 
     private boolean isThreadRun = false;
     private Thread loaderThread;
+
+    private boolean isRequestRefresh = false;
+    private int drawCountAfterRefresh = 0;
 
     private boolean currentDraw = false;
     private DoubleBufferViewLocation current;
@@ -181,6 +187,12 @@ abstract class DoubleBufferView extends FastView implements Runnable
         return current.getPrevViewIndex(top);
     }
 
+    public void invalidateEInk()
+    {
+        isRequestRefresh = true;
+        postInvalidate();
+    }
+
     public void drawImage(String path, boolean isLastPage, int viewIndex, String nextPath)
     {
         synchronized(lock)
@@ -291,6 +303,27 @@ abstract class DoubleBufferView extends FastView implements Runnable
         return isBitmap1Out==true ? mBitmap2 : mBitmap1;
     }
 
+    protected boolean checkrRfreshForEink()
+    {
+        int p = Option.getInstance().getEinkCleanOption();
+        if(p==0)
+            return false;
+        return drawCountAfterRefresh>=p;
+    }
+
+    protected void refreshForEink(Canvas canvas, Bitmap bitmap)
+    {
+        float[] colorMatrix_Negative = { -1.0f, 0, 0, 0, 255, // red
+                0, -1.0f, 0, 0, 255, // green
+                0, 0, -1.0f, 0, 255, // blue
+                0, 0, 0, 1.0f, 0 // alpha
+        };
+        ColorFilter colorFilter_Negative = new ColorMatrixColorFilter(colorMatrix_Negative);
+        Paint paintNegative = new Paint();
+        paintNegative.setColorFilter(colorFilter_Negative);
+        canvas.drawBitmap(bitmap, 0, 0, paintNegative);
+    }
+
     @Override
     protected void onDraw(Canvas canvas)
     {
@@ -306,6 +339,17 @@ abstract class DoubleBufferView extends FastView implements Runnable
         {
             if(current.complete==true)
             {
+                if(isRequestRefresh || checkrRfreshForEink())
+                {
+                    refreshForEink(canvas, getOutBitmap());
+                    isRequestRefresh = false;
+                    drawCountAfterRefresh=0;
+                    invalidate();
+                    return;
+                }
+                if(currentDraw==false)
+                    drawCountAfterRefresh++;
+
                 currentDraw = true;
                 canvas.drawBitmap(getOutBitmap(), 0, 0, null);
                 Log.d("DBV", "onDraw OK");
@@ -315,7 +359,7 @@ abstract class DoubleBufferView extends FastView implements Runnable
                 postInvalidateDelayed(100);
                 Log.d("DBV", "onDraw Skip");
             }
-            lock.notify();
+        lock.notify();
         }
     }
 }

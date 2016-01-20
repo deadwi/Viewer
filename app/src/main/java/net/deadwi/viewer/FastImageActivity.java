@@ -59,6 +59,7 @@ public class FastImageActivity extends AppCompatActivity
         {
             fastView = new PdfView(this, width, height);
             pc = new PdfViewPageController((PdfView)fastView,
+                    getIntent().getStringExtra(FullscreenActivity.MSG_DATA_ZIP_PATH),
                     getIntent().getStringExtra(FullscreenActivity.MSG_DATA_PATH));
             int ret = pc.getPageCount();
             if(ret<=0)
@@ -106,11 +107,8 @@ public class FastImageActivity extends AppCompatActivity
                         setPageControlPage(currntFileIndex, pc.getPageCount());
                         pageControl.show();
                     }
-                    /*
-                    else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3)) {
-                        refreshEink();
-                    }
-                    */
+                    //else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3))
+                    //    fastView.invalidateEInk();
                 }
                 return true;
             }
@@ -250,7 +248,7 @@ public class FastImageActivity extends AppCompatActivity
     {
         ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setMax(pageCount-1);
         ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setProgress(page);
-        ((TextView)pageControl.findViewById(R.id.textPage)).setText((page+1) + "/" + pageCount);
+        ((TextView)pageControl.findViewById(R.id.textPage)).setText((page + 1) + "/" + pageCount);
     }
 
     private void nextPage()
@@ -312,27 +310,5 @@ public class FastImageActivity extends AppCompatActivity
     private void requestImage(int fileIndex, int viewIndex, boolean isPrev)
     {
         pc.requestPage(fileIndex, viewIndex, isPrev);
-    }
-
-    private void refreshEink()
-    {
-        Log.d("FASTIMAGE", "Refresh");
-        final Instrumentation ins = new Instrumentation();
-
-        Thread task = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int x = width / 2;
-                int y = height - 20;
-                long downTime = SystemClock.uptimeMillis();
-                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0));
-                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_UP, x, y, 0));
-
-                downTime = SystemClock.uptimeMillis();
-                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0));
-                ins.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_UP, x, y, 0));
-            }
-        });
-        task.start();
     }
 }

@@ -21,4 +21,5 @@ public abstract class FastView extends View
     abstract public boolean hasPrevView();
     abstract public int getNextViewIndex();
     abstract public int getPrevViewIndex(boolean top);
+    abstract public void invalidateEInk();
 }

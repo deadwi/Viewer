@@ -96,6 +96,23 @@ public class OptionBasicFragment extends Fragment
                 ((RadioButton) view.findViewById(R.id.radioButtonDisplayF)).setChecked(true);
                 break;
         }
+
+        switch (Option.getInstance().getEinkCleanOption())
+        {
+            case 1:
+                ((RadioButton) view.findViewById(R.id.radioButtonEink1)).setChecked(true);
+                break;
+            case 5:
+                ((RadioButton) view.findViewById(R.id.radioButtonEink5)).setChecked(true);
+                break;
+            case 10:
+                ((RadioButton) view.findViewById(R.id.radioButtonEink10)).setChecked(true);
+                break;
+            case 0:
+            default:
+                ((RadioButton) view.findViewById(R.id.radioButtonEink0)).setChecked(true);
+                break;
+        }
     }
 
     public void setOptionFromUI(View view)
@@ -131,5 +148,14 @@ public class OptionBasicFragment extends Fragment
             Option.getInstance().setDisplayOption(Option.DISPLAY_HEIGHT);
         else
             Option.getInstance().setDisplayOption(Option.DISPLAY_FIT);
+
+        if(((RadioButton) view.findViewById(R.id.radioButtonEink1)).isChecked())
+            Option.getInstance().setEinkCleanOption(1);
+        else if(((RadioButton) view.findViewById(R.id.radioButtonEink5)).isChecked())
+            Option.getInstance().setEinkCleanOption(5);
+        else if(((RadioButton) view.findViewById(R.id.radioButtonEink10)).isChecked())
+            Option.getInstance().setEinkCleanOption(10);
+        else
+            Option.getInstance().setEinkCleanOption(0);
     }
 }
