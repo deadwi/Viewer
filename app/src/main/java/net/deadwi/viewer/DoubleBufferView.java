@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.Log;
 import android.view.View;
 
@@ -29,6 +30,8 @@ abstract class DoubleBufferView extends FastView implements Runnable
     private boolean currentDraw = false;
     private DoubleBufferViewLocation current;
     private DoubleBufferViewLocation next;
+    private final Rect textBounds = new Rect();
+    private final Paint textPaint = new Paint();
 
     abstract protected int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex);
 
@@ -146,6 +149,8 @@ abstract class DoubleBufferView extends FastView implements Runnable
 
         current = new DoubleBufferViewLocation();
         next = new DoubleBufferViewLocation();
+
+        textPaint.setTextSize(25.0f);
     }
 
     public void clearImage()
@@ -324,6 +329,23 @@ abstract class DoubleBufferView extends FastView implements Runnable
         canvas.drawBitmap(bitmap, 0, 0, paintNegative);
     }
 
+    protected void drawFooter(Canvas canvas)
+    {
+        if(Option.getInstance().getFooterOption()==Option.FOOTER_NONE)
+            return;
+
+        String text = "["+(pc.getCurrentPageIndex()+1)+"/"+pc.getPageCount()+"]";
+        if(Option.getInstance().getFooterOption()==Option.FOOTER_TITLE_PAGE)
+            text = pc.getTitle() + " " + text;
+
+        textPaint.getTextBounds(text, 0, text.length(), textBounds);
+        // if text length over
+        if(textBounds.width()>canvas.getWidth())
+            canvas.drawText(text, canvas.getWidth()-textBounds.width()-2, canvas.getHeight()-textBounds.height()-1, textPaint);
+        else
+            canvas.drawText(text, canvas.getWidth()/2-textBounds.width()/2, canvas.getHeight()-textBounds.height()-1, textPaint);
+    }
+
     @Override
     protected void onDraw(Canvas canvas)
     {
@@ -352,6 +374,7 @@ abstract class DoubleBufferView extends FastView implements Runnable
 
                 currentDraw = true;
                 canvas.drawBitmap(getOutBitmap(), 0, 0, null);
+                drawFooter(canvas);
                 Log.d("DBV", "onDraw OK");
             }
             else

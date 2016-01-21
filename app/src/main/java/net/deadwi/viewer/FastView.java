@@ -8,9 +8,15 @@ import android.view.View;
  */
 public abstract class FastView extends View
 {
+    protected FastViewPageController pc;
+
     public FastView(Context context)
     {
         super(context);
+    }
+    public void setPageController(FastViewPageController _pc)
+    {
+        pc = _pc;
     }
     abstract public void startBackgroundLoader();
     abstract public void stopBackgroundLoader();

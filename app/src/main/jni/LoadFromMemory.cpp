@@ -628,6 +628,46 @@ static int image_out2(JNIEnv *env, jobject bitmap, FIBITMAP *dib, int viewMode, 
 }
 
 
+static int image_apply_filter(JNIEnv *env, jobject bitmap, const char * filterOption=NULL)
+{
+    int status = -1;
+    AndroidBitmapInfo info;
+    void* pixels;
+    int ret;
+    double starttime = now_ms();
+
+    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0)
+    {
+        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        return status;
+    }
+    if (info.format != ANDROID_BITMAP_FORMAT_RGB_565)
+    {
+        LOGE("Bitmap format is not RGB_565 !");
+        return status;
+    }
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0)
+    {
+        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+        return status;
+    }
+
+    FIBITMAP *dib565 = FreeImage_Allocate(info.width, info.height, 16, FI16_565_RED_MASK, FI16_565_GREEN_MASK, FI16_565_BLUE_MASK);
+    copy_pixels(&info, pixels, FreeImage_GetBits(dib565));
+
+    if(filterOption)
+        image_filter(dib565, filterOption);
+
+    fill_pixels(&info, pixels, make565(255,255,255));
+    copy_pixels(&info, FreeImage_GetBits(dib565), pixels);
+
+    FreeImage_Unload(dib565);
+    AndroidBitmap_unlockPixels(env, bitmap);
+
+    LOGI("image_apply_filter ms : %g",now_ms()-starttime);
+    return 0;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -791,6 +831,18 @@ JNIEXPORT jintArray JNICALL Java_net_deadwi_library_FreeImageWrapper_getOutputIm
     array[i++] = isDoublePage ? 1 : 0;
     env->SetIntArrayRegion(retArr, 0, 10, array);
     return retArr;
+}
+
+JNIEXPORT jint JNICALL Java_net_deadwi_library_FreeImageWrapper_applyFilter(JNIEnv *env, jobject obj, jobject bitmap, jstring filterStr)
+{
+    jint status = RETURN_CODE_FAIL_UNKOWN;
+    jboolean isCopy;
+    const char * filterOption = env->GetStringUTFChars(filterStr, &isCopy);
+
+    image_apply_filter(env, bitmap, filterOption);
+
+    env->ReleaseStringUTFChars(filterStr, filterOption);
+    return status;
 }
 
 #ifdef __cplusplus

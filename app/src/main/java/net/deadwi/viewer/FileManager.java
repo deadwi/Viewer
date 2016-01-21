@@ -196,6 +196,16 @@ public class FileManager
         return path;
     }
 
+    static public String getNameWithoutExt(String path)
+    {
+        String name = getNameFromFullpath(path);
+
+        int pos = name.lastIndexOf(".");
+        if(pos>=0)
+            return name.substring(0, pos);
+        return name;
+    }
+
     static public boolean isZipFile(String path)
     {
         String lowerString = path.toLowerCase();

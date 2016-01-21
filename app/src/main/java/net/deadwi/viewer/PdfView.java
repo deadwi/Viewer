@@ -72,6 +72,8 @@ public class PdfView extends DoubleBufferView
                 areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_WIDTH],
                 areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_HEIGHT],
                 pageRelativeBounds);
+        if(optionFilter().length()!=0)
+            FreeImageWrapper.applyFilter(outBitmap, optionFilter());
 
         bitmap.eraseColor(Color.WHITE);
         Canvas canvas = new Canvas(bitmap);
@@ -89,8 +91,8 @@ class PdfViewPageController implements FastViewPageController
 {
     private PdfView fastView;
     private String path;
-    int startPageIndex;
     int pageCount;
+    int pageIndex;
 
     public PdfViewPageController(PdfView _fastView, String _path, String startPage)
     {
@@ -99,22 +101,27 @@ class PdfViewPageController implements FastViewPageController
         pageCount = fastView.openPdfFile(path);
 
         try {
-            startPageIndex = Integer.parseInt(startPage);
+            pageIndex = Integer.parseInt(startPage);
         }
         catch (Exception e)
         {
-            startPageIndex = 0;
+            pageIndex = 0;
         }
     }
 
-    public int getStartPageIndex()
+    public int getCurrentPageIndex()
     {
-        return startPageIndex;
+        return pageIndex;
+    }
+
+    public void setCurrentPageIndex(int i)
+    {
+        pageIndex = i;
     }
 
     public String getTitle()
     {
-        return FileManager.getNameFromFullpath(path);
+        return FileManager.getNameWithoutExt(path);
     }
 
     public int getPageCount()
@@ -148,5 +155,27 @@ class PdfViewPageController implements FastViewPageController
                 + (isPrev ? " LAST" : "") +")");
         fastView.drawImage(path, isPrev, viewIndex, prepareFilePath);
         //saveLastView(zipPath, path, viewIndex);
+    }
+
+    public boolean requestNextPage()
+    {
+        if (pageIndex>=0 && pageIndex < getPageCount() - 1)
+        {
+            pageIndex++;
+            requestPage(pageIndex, 0, false);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean requestPreviousPage()
+    {
+        if (pageIndex> 0)
+        {
+            pageIndex--;
+            requestPage(pageIndex, 0, true);
+            return true;
+        }
+        return false;
     }
 }

@@ -24,6 +24,9 @@ public class Option {
     public static final int DISPLAY_FIT= FreeImageWrapper.DISPLAY_FIT;
     public static final int DISPLAY_WIDTH= FreeImageWrapper.DISPLAY_WIDTH;
     public static final int DISPLAY_HEIGHT= FreeImageWrapper.DISPLAY_HEIGHT;
+    public static final int FOOTER_NONE=0;
+    public static final int FOOTER_PAGE=1;
+    public static final int FOOTER_TITLE_PAGE=2;
     public static final int RESIZE_METHOD_BOX= FreeImageWrapper.RESIZE_METHOD_BOX;
     public static final int RESIZE_METHOD_BILINEAR= FreeImageWrapper.RESIZE_METHOD_BILINEAR;
     public static final int RESIZE_METHOD_BSPLINE= FreeImageWrapper.RESIZE_METHOD_BSPLINE;
@@ -43,6 +46,7 @@ public class Option {
     private int touchOption;
     private int volumeButtonOption;
     private int displayOption;
+    private int footerOption;
     private int einkCleanOption;
     private int resizeMethodOption;
     private boolean isEnableColorBrightness;
@@ -81,6 +85,7 @@ public class Option {
         touchOption = TOUCH_AUTO;
         volumeButtonOption = VOLUME_BUTTON_DISABLE;
         displayOption = DISPLAY_FIT;
+        footerOption = FOOTER_NONE;
         einkCleanOption = 0;
         resizeMethodOption = RESIZE_METHOD_BILINEAR;
 
@@ -119,6 +124,7 @@ public class Option {
         volumeButtonOption = Integer.parseInt(optionProperties.getProperty("option_volume_button",""+VOLUME_BUTTON_DISABLE));
         splitOption = Integer.parseInt(optionProperties.getProperty("option_split",""+SPLIT_AUTO));
         displayOption = Integer.parseInt(optionProperties.getProperty("option_display",""+DISPLAY_FIT));
+        footerOption = Integer.parseInt(optionProperties.getProperty("option_footer",""+FOOTER_NONE));
         einkCleanOption = Integer.parseInt(optionProperties.getProperty("option_eink_clean","0"));
         resizeMethodOption = Integer.parseInt(optionProperties.getProperty("option_resize_method",""+RESIZE_METHOD_BILINEAR));
 
@@ -148,6 +154,7 @@ public class Option {
         optionProperties.setProperty("option_volume_button",""+volumeButtonOption);
         optionProperties.setProperty("option_split",""+splitOption);
         optionProperties.setProperty("option_display",""+displayOption);
+        optionProperties.setProperty("option_footer",""+footerOption);
         optionProperties.setProperty("option_eink_clean",""+einkCleanOption);
         optionProperties.setProperty("option_resize_method", "" + resizeMethodOption);
 
@@ -294,6 +301,14 @@ public class Option {
     public void setDisplayOption(int option)
     {
         displayOption = option;
+    }
+    public int getFooterOption()
+    {
+        return footerOption;
+    }
+    public void setFooterOption(int option)
+    {
+        footerOption = option;
     }
     public int getEinkCleanOption()
     {

@@ -278,6 +278,49 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Footer"
+                android:id="@+id/textView12"
+                android:layout_column="1"
+                android:layout_weight="1" />
+
+            <RadioGroup
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="4"
+                android:orientation="horizontal" >
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="None"
+                    android:id="@+id/radioButtonFooterN"
+                    android:layout_column="5" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Page"
+                    android:id="@+id/radioButtonFooterP"
+                    android:layout_column="7" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Title, Page"
+                    android:id="@+id/radioButtonFooterTP"
+                    android:layout_column="8" />
+            </RadioGroup>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="Eink Clean"
                 android:id="@+id/textView11"
                 android:layout_column="1"

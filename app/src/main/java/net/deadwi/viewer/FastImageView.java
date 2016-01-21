@@ -48,6 +48,7 @@ class FastImageViewPageController implements FastViewPageController
     private String path;
     private String zipPath;
     private String[] files;
+    private int currntFileIndex;
 
     public FastImageViewPageController(FastImageView _fastView, String _path, String _zipPath, String[] _files)
     {
@@ -57,23 +58,24 @@ class FastImageViewPageController implements FastViewPageController
         files = _files;
 
         fastView.setZipPath(zipPath);
+        currntFileIndex = getStartPageIndex();
     }
 
-    public int getStartPageIndex()
+    public int getCurrentPageIndex()
     {
-        int index = 0;
-        if(path!=null)
-            index = getFileIndex(path);
-        if(index<0)
-            index = 0;
-        return index;
+        return currntFileIndex;
+    }
+
+    public void setCurrentPageIndex(int i)
+    {
+        currntFileIndex = i;
     }
 
     public String getTitle()
     {
         if(zipPath!=null)
-            return FileManager.getNameFromFullpath(zipPath);
-        return FileManager.getNameFromFullpath( FileManager.getPathFromFullpath(path,"/root") );
+            return FileManager.getNameWithoutExt(zipPath);
+        return FileManager.getNameWithoutExt( FileManager.getPathFromFullpath(path,"/root") );
     }
 
     public int getPageCount()
@@ -110,6 +112,38 @@ class FastImageViewPageController implements FastViewPageController
         fastView.drawImage(path, isPrev, viewIndex, prepareFilePath);
 
         saveLastView(zipPath, path, viewIndex);
+    }
+
+    public boolean requestNextPage()
+    {
+        if (currntFileIndex>=0 && currntFileIndex < getPageCount() - 1)
+        {
+            currntFileIndex++;
+            requestPage(currntFileIndex, 0, false);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean requestPreviousPage()
+    {
+        if (currntFileIndex> 0)
+        {
+            currntFileIndex--;
+            requestPage(currntFileIndex, 0, true);
+            return true;
+        }
+        return false;
+    }
+
+    private int getStartPageIndex()
+    {
+        int index = 0;
+        if(path!=null)
+            index = getFileIndex(path);
+        if(index<0)
+            index = 0;
+        return index;
     }
 
     private int getFileIndex(String path)

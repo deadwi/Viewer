@@ -57,8 +57,9 @@ public class FreeImageWrapper
 
     static private native void initFreeImage();
     static private native void deInitFreeImage();
-    static public native boolean loadImageFromMemory(Bitmap  bitmap, Byte[] data, int dataSize);
-    static public native int loadImageFromPath(Bitmap  bitmap, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
-    static public native int loadImageFromZip(Bitmap  bitmap, String zipPath, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
+    static public native boolean loadImageFromMemory(Bitmap bitmap, Byte[] data, int dataSize);
+    static public native int loadImageFromPath(Bitmap bitmap, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
+    static public native int loadImageFromZip(Bitmap bitmap, String zipPath, String path, boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int optionResizeMethod, String filterOption);
     static public native int[] getOutputImageArea(boolean isLastPage, int viewIndex, int optionViewMode, int optionResizeMode, int srcWidth, int srcHeight, int viewWidth, int viewHeight);
+    static public native int applyFilter(Bitmap bitmap, String filterOption);
 }

@@ -16,8 +16,11 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,14 +33,15 @@ public class FastImageActivity extends AppCompatActivity
     private FastViewPageController pc;
     private int width;
     private int height;
-    private int currntFileIndex;
     private Dialog pageControl;
+    private TextView footer;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         createPageControl();
+        //createFooter();
 
         FreeImageWrapper.init();
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
@@ -74,9 +78,8 @@ public class FastImageActivity extends AppCompatActivity
             }
         }
 
-        currntFileIndex = pc.getStartPageIndex();
-        setPageControlTitle( pc.getTitle() );
-
+        fastView.setPageController(pc);
+        setPageControlTitle(pc.getTitle());
 
         fastView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -85,26 +88,22 @@ public class FastImageActivity extends AppCompatActivity
                     Log.d("FASTIMAGE", "Touch " + event.getX() + "," + event.getY());
 
                     // Left side
-                    if (event.getX() < (width / 4))
-                    {
-                        if(Option.getInstance().isRightTouchNextPage())
+                    if (event.getX() < (width / 4)) {
+                        if (Option.getInstance().isRightTouchNextPage())
                             previousViewPage();
                         else
                             nextViewPage();
                     }
                     // Right side
-                    else if (event.getX() > (width / 4 * 3))
-                    {
-                        if(Option.getInstance().isRightTouchNextPage())
+                    else if (event.getX() > (width / 4 * 3)) {
+                        if (Option.getInstance().isRightTouchNextPage())
                             nextViewPage();
                         else
                             previousViewPage();
-                    }
-                    else if (event.getY() < (height / 4))
+                    } else if (event.getY() < (height / 4))
                         closeViewPage(true);
-                    else if (event.getY() > (height / 4 * 3))
-                    {
-                        setPageControlPage(currntFileIndex, pc.getPageCount());
+                    else if (event.getY() > (height / 4 * 3)) {
+                        setPageControlPage(pc.getCurrentPageIndex(), pc.getPageCount());
                         pageControl.show();
                     }
                     //else if (event.getY() > (height / 4 * 2) && event.getY() < (height / 4 * 3))
@@ -116,7 +115,7 @@ public class FastImageActivity extends AppCompatActivity
 
         setContentView(fastView);
         fastView.startBackgroundLoader();
-        requestImage(currntFileIndex, viewIndex, false);
+        requestImage(pc.getCurrentPageIndex(), viewIndex, false);
     }
 
     @Override
@@ -146,7 +145,7 @@ public class FastImageActivity extends AppCompatActivity
         if(Option.getInstance().IsChanged())
         {
             fastView.clearImage();
-            requestImage(currntFileIndex, fastView.getViewIndex(), false);
+            requestImage(pc.getCurrentPageIndex(), fastView.getViewIndex(), false);
             Option.getInstance().setChanged(false);
         }
     }
@@ -154,7 +153,7 @@ public class FastImageActivity extends AppCompatActivity
     @Override
     public boolean onKeyDown(int keycode, KeyEvent event)
     {
-        Log.d("FASTIMAGE","key="+keycode);
+        Log.d("FASTIMAGE", "key=" + keycode);
         // ridibooks.com/Paper hardware key
         switch(keycode)
         {
@@ -171,7 +170,7 @@ public class FastImageActivity extends AppCompatActivity
                 closeViewPage(true);
                 break;
             case KeyEvent.KEYCODE_MENU:
-                setPageControlPage(currntFileIndex, pc.getPageCount());
+                setPageControlPage(pc.getCurrentPageIndex(), pc.getPageCount());
                 pageControl.show();
                 break;
             case KeyEvent.KEYCODE_VOLUME_UP:
@@ -217,9 +216,9 @@ public class FastImageActivity extends AppCompatActivity
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
-                currntFileIndex = progress;
+                pc.setCurrentPageIndex(progress);
                 setPageControlPage(progress, pc.getPageCount());
-                requestImage(currntFileIndex, 0, false);
+                requestImage(pc.getCurrentPageIndex(), 0, false);
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar)
@@ -231,12 +230,26 @@ public class FastImageActivity extends AppCompatActivity
             }
         });
 
-
-        //pageControl.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL , WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-
         WindowManager.LayoutParams params = pageControl.getWindow().getAttributes();
         params.width = WindowManager.LayoutParams.MATCH_PARENT;
         pageControl.getWindow().setAttributes(params);
+    }
+
+    private void createFooter()
+    {
+        footer = new TextView(this);
+        footer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        footer.setGravity(Gravity.CENTER_HORIZONTAL);
+        footer.setBackgroundColor(Color.parseColor("#FFFFFF"));
+        footer.setPadding(20, 10, 10, 10);
+        footer.setTextColor(Color.parseColor("#000000"));
+        footer.setTextSize(10);
+        footer.setText("텍스트");
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.BOTTOM;
+        params.width = FrameLayout.LayoutParams.MATCH_PARENT;
+        this.addContentView(footer, params);
     }
 
     private void setPageControlTitle(String title)
@@ -253,13 +266,8 @@ public class FastImageActivity extends AppCompatActivity
 
     private void nextPage()
     {
-        Log.d("FASTIMAGE","Page(next) : "+(currntFileIndex+1)+"/"+pc.getPageCount());
-        if (currntFileIndex>=0 && currntFileIndex < pc.getPageCount() - 1)
-        {
-            currntFileIndex++;
-            requestImage(currntFileIndex, 0, false);
-        }
-        else
+        Log.d("FASTIMAGE","Page(next) : "+(pc.getCurrentPageIndex()+1)+"/"+pc.getPageCount());
+        if (pc.requestNextPage()==false)
         {
             Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_LAST_PAGE, Toast.LENGTH_SHORT).show();
         }
@@ -267,13 +275,8 @@ public class FastImageActivity extends AppCompatActivity
 
     private void previousPage()
     {
-        Log.d("FASTIMAGE","Page(prev) : "+(currntFileIndex+1)+"/"+pc.getPageCount());
-        if (currntFileIndex> 0)
-        {
-            currntFileIndex--;
-            requestImage(currntFileIndex, 0, true);
-        }
-        else
+        Log.d("FASTIMAGE","Page(prev) : "+(pc.getCurrentPageIndex()+1)+"/"+pc.getPageCount());
+        if (pc.requestPreviousPage()==false)
         {
             Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_FIRST_PAGE, Toast.LENGTH_SHORT).show();
         }
@@ -283,7 +286,7 @@ public class FastImageActivity extends AppCompatActivity
     {
         if(fastView.hasNextView())
         {
-            requestImage(currntFileIndex, fastView.getNextViewIndex(), false);
+            requestImage(pc.getCurrentPageIndex(), fastView.getNextViewIndex(), false);
         }
         else
             nextPage();
@@ -293,7 +296,7 @@ public class FastImageActivity extends AppCompatActivity
     {
         if(fastView.hasPrevView())
         {
-            requestImage(currntFileIndex, fastView.getPrevViewIndex(true), false);
+            requestImage(pc.getCurrentPageIndex(), fastView.getPrevViewIndex(true), false);
         }
         else
             previousPage();
@@ -302,7 +305,7 @@ public class FastImageActivity extends AppCompatActivity
     private void closeViewPage(boolean save)
     {
         if(save)
-            pc.saveBookmark(currntFileIndex, fastView.getViewIndex());
+            pc.saveBookmark(pc.getCurrentPageIndex(), fastView.getViewIndex());
         finish();
         overridePendingTransition(0, 0);
     }

@@ -97,6 +97,20 @@ public class OptionBasicFragment extends Fragment
                 break;
         }
 
+        switch (Option.getInstance().getFooterOption())
+        {
+            case Option.FOOTER_PAGE:
+                ((RadioButton) view.findViewById(R.id.radioButtonFooterP)).setChecked(true);
+                break;
+            case Option.FOOTER_TITLE_PAGE:
+                ((RadioButton) view.findViewById(R.id.radioButtonFooterTP)).setChecked(true);
+                break;
+            case Option.FOOTER_NONE:
+            default:
+                ((RadioButton) view.findViewById(R.id.radioButtonFooterN)).setChecked(true);
+                break;
+        }
+
         switch (Option.getInstance().getEinkCleanOption())
         {
             case 1:
@@ -148,6 +162,13 @@ public class OptionBasicFragment extends Fragment
             Option.getInstance().setDisplayOption(Option.DISPLAY_HEIGHT);
         else
             Option.getInstance().setDisplayOption(Option.DISPLAY_FIT);
+
+        if(((RadioButton) view.findViewById(R.id.radioButtonFooterP)).isChecked())
+            Option.getInstance().setFooterOption(Option.FOOTER_PAGE);
+        else if(((RadioButton) view.findViewById(R.id.radioButtonFooterTP)).isChecked())
+            Option.getInstance().setFooterOption(Option.FOOTER_TITLE_PAGE);
+        else
+            Option.getInstance().setFooterOption(Option.FOOTER_NONE);
 
         if(((RadioButton) view.findViewById(R.id.radioButtonEink1)).isChecked())
             Option.getInstance().setEinkCleanOption(1);
