@@ -104,7 +104,10 @@ public class CustomAdapter extends BaseAdapter
         }
         else
         {
-            textHead.setText("F");
+            if(FileManager.isBookFile(list.get(position).name))
+                textHead.setText("B");
+            else
+                textHead.setText("F");
 
             String info = FileManager.getFileSizeText(list.get(position).size);
             BookmarkItem mark = Bookmark.getBookmark(bookmarkList, list.get(position).name);

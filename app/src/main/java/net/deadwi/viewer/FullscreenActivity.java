@@ -122,7 +122,10 @@ public class FullscreenActivity extends AppCompatActivity
         findViewById(R.id.buttonDown).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Not support yet", Toast.LENGTH_SHORT).show();
+                Intent myIntent = new Intent(FullscreenActivity.this, ServerListActivity.class);
+                startActivity(myIntent);
+                overridePendingTransition(0, 0);
+                //Toast.makeText(getApplicationContext(), "Not support yet", Toast.LENGTH_SHORT).show();
             }
         });
         // 상위 디렉토리

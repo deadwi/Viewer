@@ -19,7 +19,7 @@
     <string name="BUTTON_NEXT">NEXT</string>
     <string name="BUTTON_DOWN">DOWN</string>
     <string name="BUTTON_CHECK_ALL">CHECK ALL</string>
-    <string name="BUTTON_UNCHECK_ALL">UNCHECK ALL</string>
+    <string name="BUTTON_UNCHECK_ALL">UNCHECK</string>
     <string name="BUTTON_CLOSE">CLOSE</string>
     <string name="BUTTON_PROGRESS">PROGRESS</string>
     <string name="BUTTON_SERVER_LIST">SERVER LIST</string>

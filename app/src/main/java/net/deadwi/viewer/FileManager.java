@@ -229,6 +229,10 @@ public class FileManager
         String lowerString = path.toLowerCase();
         return lowerString.toLowerCase().endsWith(".pdf");
     }
+    static public boolean isBookFile(String path)
+    {
+        return isZipFile(path) || isImageFile(path) || isPdfFile(path);
+    }
 
     static public ArrayList<FileItem> getFileListFromZipFile(String zipFile, String innerPath)
     {
