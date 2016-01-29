@@ -1,10 +1,8 @@
 package net.deadwi.viewer;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
-import android.net.Uri;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -13,18 +11,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Intent;
+
+import net.deadwi.viewer.server.ServerListActivity;
+import net.deadwi.viewer.server.ServerStorage;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -78,12 +74,15 @@ public class FullscreenActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
-        Option.getInstance().loadOption( getFilesDir().getAbsolutePath() );
+        Option.getInstance().loadOption(getFilesDir().getAbsolutePath());
         if(Option.getInstance().IsPortrait())
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        Bookmark.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
+        //Bookmark.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
+        //ServerStorage.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
+        Bookmark.getInstance().setSavePath(getApplicationContext().getExternalFilesDir(null).getAbsolutePath());
+        ServerStorage.getInstance().setSavePath(getApplicationContext().getExternalFilesDir(null).getAbsolutePath());
 
         setContentView(R.layout.activity_fullscreen);
 

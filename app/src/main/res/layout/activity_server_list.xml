@@ -83,7 +83,7 @@
                 android:layout_height="match_parent"
                 android:text="@string/BUTTON_CHECK_ALL"
                 android:id="@+id/buttonCheckAll"
-                android:textSize="13sp" />
+                android:textSize="12sp" />
 
             <Button
                 android:layout_width="90dp"

@@ -160,13 +160,9 @@ public class FileManager
         return String.format("%.1fG", size / 1024.0 / 1024.0 / 1024.0);
     }
 
-    public static String getFullPath(String path, String name)
+    public static String getFullPath(String path1, String path2)
     {
-        String fullPath = path;
-        if(fullPath.endsWith("/")==false)
-            fullPath += "/";
-        fullPath += name;
-        return fullPath;
+        return (path1.endsWith("/") ? path1.substring(0,path1.length()-1) : path1)+"/"+(path2.startsWith("/") ? path2.substring(1) : path2);
     }
 
     static public String getNameFromFullpath(String path)
@@ -204,6 +200,24 @@ public class FileManager
         if(pos>=0)
             return name.substring(0, pos);
         return name;
+    }
+
+    static public File getFileWithDirectory(String fullPath)
+    {
+        String path = getPathFromFullpath(fullPath,"/");
+        File pathFile = new File(path);
+        if(pathFile.exists()==false)
+        {
+            if(pathFile.mkdirs()==false)
+            {
+                Log.d("FILE","mkdir fail : "+path);
+                return null;
+            }
+            Log.d("FILE","mkdir ok : "+path);
+        }
+
+        File file = new File(fullPath);
+        return file;
     }
 
     static public boolean isZipFile(String path)
@@ -285,7 +299,7 @@ public class FileManager
         return fileList;
     }
 
-    static private void filterFilelist(ArrayList<FileItem> fileList, String _keyword)
+    static public void filterFilelist(ArrayList<FileItem> fileList, String _keyword)
     {
         String keyword = _keyword.toLowerCase();
         Iterator<FileItem> iter = fileList.iterator();
@@ -297,7 +311,7 @@ public class FileManager
         }
     }
 
-    static private void sortFilelist(ArrayList<FileItem> fileList, int sortType)
+    static public void sortFilelist(ArrayList<FileItem> fileList, int sortType)
     {
         switch(sortType)
         {

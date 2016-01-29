@@ -18,6 +18,7 @@ import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,6 +77,8 @@ public class CustomAdapter extends BaseAdapter
             // view가 null일 경우 커스텀 레이아웃을 얻어 옴
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.file_item, parent, false);
+
+            ((CheckBox)convertView.findViewById(R.id.checkBox)).setVisibility(View.GONE);
 
             text = (TextView) convertView.findViewById(R.id.text);
             textInfo = (TextView) convertView.findViewById(R.id.textInfo);
@@ -184,16 +187,6 @@ public class CustomAdapter extends BaseAdapter
             }
         });
         return convertView;
-    }
-
-    public void add(FileItem item)
-    {
-        list.add(item);
-    }
-
-    public void remove(int _position)
-    {
-        list.remove(_position);
     }
 
     public void updateFileList(String keyword)

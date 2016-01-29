@@ -23,4 +23,7 @@
     <string name="BUTTON_CLOSE">CLOSE</string>
     <string name="BUTTON_PROGRESS">PROGRESS</string>
     <string name="BUTTON_SERVER_LIST">SERVER LIST</string>
+    <string name="MESSAGE_ADD_DOWNLOAD">Add download item : %d</string>
+    <string name="MESSAGE_FAIL_GET_LIST">Fail : %s</string>
+    <string name="MESSAGE_UNKNOWN_ERROR">Unknown error</string>
 </resources>

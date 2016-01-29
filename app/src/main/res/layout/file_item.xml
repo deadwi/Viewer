@@ -22,8 +22,9 @@
 
         <LinearLayout
             android:orientation="vertical"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1">
 
             <TextView
                 android:id="@+id/text"
@@ -54,6 +55,11 @@
                 android:text="size"
                 android:gravity="bottom" />
         </LinearLayout>
+
+        <CheckBox
+            android:layout_width="30dp"
+            android:layout_height="fill_parent"
+            android:id="@+id/checkBox" />
 
     </LinearLayout>
 
