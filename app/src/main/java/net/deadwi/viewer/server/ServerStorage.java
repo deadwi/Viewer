@@ -82,6 +82,14 @@ public class ServerStorage {
         saveServerList();
     }
 
+    public void removeServer(int index)
+    {
+        ServerInfo s = getServerInfo(index);
+        if(s!=null)
+            serverList.remove(s);
+        saveServerList();
+    }
+
     public int getServerCount()
     {
         return  serverList.size();

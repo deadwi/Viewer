@@ -45,7 +45,7 @@ public class HTTPSeverConnector
     private String downloadPath;
     //private volatile ArrayList<String[]> lastList;
     private volatile ListResult lastList;
-    private Deque<DownloadFile> downloadQue;
+    private DownloadSet downloadSet;
     private DownloadListTask listTask=null;
     private DownloadFileThread fileThread=null;
 
@@ -111,13 +111,14 @@ public class HTTPSeverConnector
             while(!Thread.currentThread().isInterrupted())
             {
                 DownloadFile df;
-                synchronized (downloadQue)
+                synchronized (downloadSet)
                 {
-                    df = downloadQue.pollFirst();
+                    df = downloadSet.downloadQue.pollFirst();
+                    downloadSet.downloading = df;
                     if(df==null)
                     {
                         try {
-                            downloadQue.wait();
+                            downloadSet.wait();
                         } catch (InterruptedException e)
                         {
                         }
@@ -128,31 +129,37 @@ public class HTTPSeverConnector
                 {
                     // add files in directory
                     ListResult lr =  HTTPSeverConnector.getListResult(df.serverInfo.getUrlWithHttp(), df.fullPath, df.serverInfo.user, df.serverInfo.password);
-                    synchronized (downloadQue)
+                    synchronized (downloadSet)
                     {
                         for(int i=lr.files.size()-1;i>=0;i--)
                         {
                             FileItem item = lr.files.get(i);
-                            downloadQue.addFirst( new DownloadFile(df.serverInfo,
+                            downloadSet.downloadQue.addFirst(new DownloadFile(df.serverInfo,
                                     item.getFullPath(),
-                                    FileManager.getFullPath(df.target,item.name),
-                                    item.type==FileItem.TYPE_DIR) );
+                                    FileManager.getFullPath(df.target, item.name),
+                                    item.type == FileItem.TYPE_DIR) );
                         }
+                        downloadSet.downloading = null;
                     }
                     continue;
                 }
 
                 try
                 {
-                    Log.d("HTTP", "download : " + df.target);
+                    Log.d("HTTP", "download start : " + df.target);
                     String fullPath = FileManager.getFullPath(df.serverInfo.getUrlWithHttp(),df.fullPath);
                     URLConnection conn = getURLConnection(fullPath, df.serverInfo.user, df.serverInfo.password);
                     BufferedInputStream bis = new BufferedInputStream(conn.getInputStream());
                     BufferedOutputStream bout = new BufferedOutputStream(getFileOutputStream(df));
 
                     int readSize = 0;
-                    while (isCancelled() == false)
+                    while (true)
                     {
+                        if(isCancelled() == true)
+                        {
+                            Log.d("HTTP", "download cancel : " + df.target);
+                            break;
+                        }
                         // blocking
                         readSize = bis.read(buffer);
                         //Log.d("HTTP", "get : " + readSize);
@@ -162,6 +169,8 @@ public class HTTPSeverConnector
                             break;
                     }
                     bout.close();
+
+                    Log.d("HTTP", "download end : " + df.target);
                 }
                 catch (Exception ex)
                 {
@@ -180,7 +189,12 @@ public class HTTPSeverConnector
 
         private boolean isCancelled()
         {
-            return false;
+            boolean isnull = false;
+            synchronized (downloadSet)
+            {
+                isnull = downloadSet.downloading==null;
+            }
+            return isnull;
         }
     }
 
@@ -332,10 +346,10 @@ public class HTTPSeverConnector
         return size*unit;
     }
 
-    public HTTPSeverConnector(Handler _handler, Deque<DownloadFile> _downloadQue)
+    public HTTPSeverConnector(Handler _handler, DownloadSet _downloadSet)
     {
         handler = _handler;
-        downloadQue = _downloadQue;
+        downloadSet = _downloadSet;
         fileThread = new DownloadFileThread();
         fileThread.start();
 

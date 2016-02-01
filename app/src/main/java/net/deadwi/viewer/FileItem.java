@@ -16,6 +16,8 @@ public class FileItem
     public static final int TYPE_FILE_IN_ZIP=3;
     public static final int TYPE_NEW_SITE=1000;
     public static final int TYPE_SITE=1001;
+    public static final int TYPE_DOWNLOAD_DIR=2000;
+    public static final int TYPE_DOWNLOAD_FILE=2001;
 
     public String path;
     public String name;
@@ -23,6 +25,7 @@ public class FileItem
     public String date;
     public int type;
     public long size;
+    public Object odata;
     public boolean checked=false;
 
     public FileItem(String _path, String _name, int _type, long _size)
@@ -58,6 +61,7 @@ public class FileItem
         size=_size;
     }
 
+    // for server file
     public FileItem(String _path, String _name, String _date, int _type, long _size)
     {
         path=_path;
@@ -65,6 +69,15 @@ public class FileItem
         date=_date;
         type=_type;
         size=_size;
+    }
+
+    // for dataload
+    public FileItem(String _name, int _type, long _size, Object _odata)
+    {
+        name=_name;
+        type=_type;
+        size=_size;
+        odata=_odata;
     }
 
     public String getFullPath()

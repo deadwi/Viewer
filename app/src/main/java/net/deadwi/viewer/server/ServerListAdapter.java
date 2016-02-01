@@ -4,12 +4,15 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import net.deadwi.viewer.FileItem;
 import net.deadwi.viewer.FileManager;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 public class ServerListAdapter extends BaseAdapter
 {
     private ArrayList<FileItem> list;
+    private Context context;
     private ServerManager serverManager;
     private Handler handler;
 
@@ -30,8 +34,9 @@ public class ServerListAdapter extends BaseAdapter
         CheckBox checkbox;
     }
 
-    public ServerListAdapter(ServerManager _serverManager, Handler _handler)
+    public ServerListAdapter(Context _context,ServerManager _serverManager, Handler _handler)
     {
+        context = _context;
         serverManager = _serverManager;
         handler = _handler;
         list = new ArrayList<>();
@@ -129,42 +134,62 @@ public class ServerListAdapter extends BaseAdapter
             checkbox.setChecked(list.get(position).checked);
         }
 
-        convertView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v)
-            {
-                FileItem item = list.get(pos);
-                Message msg = Message.obtain();
-                Bundle data = new Bundle();
-                data.putString(ServerListActivity.MSG_DATA_PATH, item.path);
-                data.putString(ServerListActivity.MSG_DATA_NAME, item.name);
-                data.putInt(ServerListActivity.MSG_DATA_TYPE, item.type);
-                msg.setData(data);
-                msg.what = ServerListActivity.EVENT_CLICK;
-                handler.sendMessage(msg);
-            }
-        });
+        if(list.get(position).type != FileItem.TYPE_DOWNLOAD_DIR && list.get(position).type != FileItem.TYPE_DOWNLOAD_FILE) {
+            convertView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    FileItem item = list.get(pos);
+                    Message msg = Message.obtain();
+                    Bundle data = new Bundle();
+                    data.putString(ServerListActivity.MSG_DATA_PATH, item.path);
+                    data.putString(ServerListActivity.MSG_DATA_NAME, item.name);
+                    data.putInt(ServerListActivity.MSG_DATA_TYPE, item.type);
+                    msg.setData(data);
+                    msg.what = ServerListActivity.EVENT_CLICK;
+                    handler.sendMessage(msg);
+                }
+            });
+        }
 
-        convertView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                FileItem item = list.get(pos);
-                Message msg = Message.obtain();
-                Bundle data = new Bundle();
-                data.putString(ServerListActivity.MSG_DATA_PATH, item.path);
-                data.putString(ServerListActivity.MSG_DATA_NAME, item.name);
-                data.putInt(ServerListActivity.MSG_DATA_TYPE, item.type);
-                msg.setData(data);
-                msg.what = ServerListActivity.EVENT_LONG_CLICK;
-                handler.sendMessage(msg);
-                return true;
-            }
-        });
+        if(list.get(position).type == FileItem.TYPE_SITE)
+        {
+            convertView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    PopupMenu popup = new PopupMenu(context, v);
+                    popup.getMenuInflater().inflate(R.menu.poupup_menu, popup.getMenu());
+                    popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        public boolean onMenuItemClick(MenuItem menuItem) {
+                            FileItem item = list.get(pos);
+                            Message msg = Message.obtain();
+                            Bundle data = new Bundle();
+                            data.putString(ServerListActivity.MSG_DATA_PATH, item.path);
+                            data.putString(ServerListActivity.MSG_DATA_NAME, item.name);
+                            data.putInt(ServerListActivity.MSG_DATA_TYPE, item.type);
+                            msg.setData(data);
+                            if (menuItem.getItemId() == R.id.edit)
+                            {
+                                msg.what = ServerListActivity.EVENT_SITE_EDIT;
+                                handler.sendMessage(msg);
+                            }
+                            else if (menuItem.getItemId() == R.id.delete)
+                            {
+                                msg.what = ServerListActivity.EVENT_SITE_DELETE;
+                                handler.sendMessage(msg);
+                            }
+                            return true;
+                        }
+                    });
+                    popup.show();
+                    return true;
+                }
+            });
+        }
 
         checkbox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                list.get(pos).checked = ((CheckBox)view).isChecked();
+                list.get(pos).checked = ((CheckBox) view).isChecked();
             }
         });
 
@@ -178,6 +203,11 @@ public class ServerListAdapter extends BaseAdapter
             list = serverManager.getCurrentFiles(path);
         else
             list = serverManager.getMatchFiles(path, keyword);
+    }
+
+    public void updateDownloadList()
+    {
+        list = serverManager.getDownloadFiles();
     }
 
     public void checkAllFiles()
@@ -204,6 +234,11 @@ public class ServerListAdapter extends BaseAdapter
             count++;
         }
         return count;
+    }
+
+    public int cancelFiles()
+    {
+        return serverManager.cancelDownload(list);
     }
 }
 

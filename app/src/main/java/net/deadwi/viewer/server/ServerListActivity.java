@@ -1,15 +1,20 @@
 package net.deadwi.viewer.server;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.PopupMenu;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -26,6 +31,8 @@ public class ServerListActivity  extends AppCompatActivity
     public static final int EVENT_LONG_CLICK = 1002;
     public static final int EVENT_UPDATE_LIST_OK = 2001;
     public static final int EVENT_UPDATE_LIST_FAIL = 2002;
+    public static final int EVENT_SITE_EDIT = 3001;
+    public static final int EVENT_SITE_DELETE = 3002;
 
     public static final String MSG_DATA_NAME = "name";
     public static final String MSG_DATA_PATH = "path";
@@ -36,6 +43,7 @@ public class ServerListActivity  extends AppCompatActivity
     private TextView currentNameTextView;
     private ServerListAdapter listAdapter;
     private ServerManager serverManager;
+    private boolean isViewServer=true;
     private String currentPath=null;
 
     private final MyHandler handler = new MyHandler(this);
@@ -64,7 +72,7 @@ public class ServerListActivity  extends AppCompatActivity
         currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
 
         serverManager = new ServerManager(handler);
-        listAdapter = new ServerListAdapter(serverManager,handler);
+        listAdapter = new ServerListAdapter(this, serverManager,handler);
         fileListView = (ListView) findViewById(R.id.listView);
         fileListView.setAdapter(listAdapter);
 
@@ -125,10 +133,12 @@ public class ServerListActivity  extends AppCompatActivity
         findViewById(R.id.buttonDown).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                downloadFiles();
+                if(isViewServer)
+                    downloadFiles();
+                else
+                    cancelDownloadFiles();
             }
         });
-
         // 첫페이지
         findViewById(R.id.buttonPrevPage).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -152,13 +162,12 @@ public class ServerListActivity  extends AppCompatActivity
             @Override
             public boolean onKey(View view, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                    refreshFileList(false);
                     return true;
                 }
                 return false;
             }
         });
-
-        //refreshFileList(true);
     }
 
     @Override
@@ -209,28 +218,64 @@ public class ServerListActivity  extends AppCompatActivity
     private void refreshFileList(boolean isClearStatus)
     {
         EditText search = (EditText) findViewById(R.id.editText);
-        if(isClearStatus)
+        hideKeyboard();
+        if(isViewServer==true)
+        {
+            ((Button)findViewById(R.id.buttonDown)).setText(R.string.BUTTON_DOWN);
+            findViewById(R.id.buttonDown).setEnabled(currentPath!=null);
+            findViewById(R.id.editText).setEnabled(true);
+            if(isClearStatus)
+                search.setText("");
+
+            currentNameTextView.setText(serverManager.getCurrentName(currentPath));
+            listAdapter.updateFileList(currentPath, search.getText().toString());
+            listAdapter.notifyDataSetChanged();
+            fileListView.setSelectionAfterHeaderView();
+        }
+        else
+        {
+            ((Button)findViewById(R.id.buttonDown)).setText(R.string.BUTTON_CANCEL);
+            findViewById(R.id.buttonDown).setEnabled(true);
+            findViewById(R.id.editText).setEnabled(false);
             search.setText("");
 
-        hideKeyboard();
-        currentNameTextView.setText(serverManager.getCurrentName(currentPath));
-        listAdapter.updateFileList(currentPath, search.getText().toString());
-        listAdapter.notifyDataSetChanged();
-        fileListView.setSelectionAfterHeaderView();
+            currentNameTextView.setText("DOWNLOAD");
+            listAdapter.updateDownloadList();
+            listAdapter.notifyDataSetChanged();
+            fileListView.setSelectionAfterHeaderView();
+        }
     }
 
     private void goServerList()
     {
-        serverManager.disconnectServer();
-        refreshFileList(true);
+        if(isViewServer == true)
+        {
+            serverManager.disconnectServer();
+            currentPath = null;
+            refreshFileList(true);
+        }
+        // 서버쪽 화면으로 이동
+        else
+        {
+            isViewServer = true;
+            refreshFileList(true);
+        }
     }
 
     private void goUpFolder()
     {
         ((EditText) findViewById(R.id.editText)).setText("");
-        if(serverManager.movePreviousDir(currentPath)==false)
+        if(isViewServer == true)
         {
-            currentPath = null;
+            if (serverManager.movePreviousDir(currentPath) == false) {
+                currentPath = null;
+                refreshFileList(true);
+            }
+        }
+        // 서버쪽 화면으로 이동
+        else
+        {
+            isViewServer = true;
             refreshFileList(true);
         }
     }
@@ -271,12 +316,9 @@ public class ServerListActivity  extends AppCompatActivity
                     break;
             }
         }
-        else if(msg.what==EVENT_LONG_CLICK)
-        {
-
-        }
         else if(msg.what==EVENT_UPDATE_LIST_OK)
         {
+            isViewServer = true;
             currentPath = path;
             refreshFileList(false);
         }
@@ -287,6 +329,14 @@ public class ServerListActivity  extends AppCompatActivity
                 message = getString(R.string.MESSAGE_UNKNOWN_ERROR);
             Toast.makeText(this.getApplicationContext(), String.format(getString(R.string.MESSAGE_FAIL_GET_LIST), message), Toast.LENGTH_SHORT).show();
         }
+        else if(msg.what==EVENT_SITE_EDIT)
+        {
+            popupEditServer(path);
+        }
+        else if(msg.what==EVENT_SITE_DELETE)
+        {
+            popupDeleteServer(path);
+        }
     }
 
     private void popupNewServer()
@@ -294,6 +344,45 @@ public class ServerListActivity  extends AppCompatActivity
         Intent myIntent = new Intent(ServerListActivity.this, ServerEditActivity.class);
         startActivity(myIntent);
         overridePendingTransition(0, 0);
+    }
+
+    private void popupEditServer(String path)
+    {
+        Intent myIntent = new Intent(ServerListActivity.this, ServerEditActivity.class);
+        myIntent.putExtra(MSG_DATA_PATH, path);
+        startActivity(myIntent);
+        overridePendingTransition(0, 0);
+    }
+
+    private void popupDeleteServer(final String path)
+    {
+        AlertDialog.Builder alt_bld = new AlertDialog.Builder(this);
+        alt_bld.setMessage("Do you want to delete this sever?")
+                .setCancelable(false)
+                .setOnKeyListener(new DialogInterface.OnKeyListener() {
+                    @Override
+                    public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                        if (keyCode == KeyEvent.KEYCODE_BACK) {
+                            dialog.cancel();
+                            return true;
+                        }
+                        return false;
+                    }
+                })
+                .setPositiveButton("NO", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                })
+                .setNegativeButton("YES", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        ServerStorage.getInstance().removeServer(Integer.parseInt(path));
+                        refreshFileList(true);
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog alert = alt_bld.create();
+        alert.show();
     }
 
     private void connectServer(String path)
@@ -328,8 +417,15 @@ public class ServerListActivity  extends AppCompatActivity
         }
     }
 
+    private void cancelDownloadFiles()
+    {
+        int count = listAdapter.cancelFiles();
+        refreshFileList(true);
+    }
+
     private void viewDownloadProgress()
     {
-
+        isViewServer = false;
+        refreshFileList(true);
     }
 }

@@ -23,13 +23,13 @@ public class ServerManager
     private ServerInfo currentServerInfo;
     private HTTPSeverConnector serverHttp;
     private Handler handler;
-    private Deque<DownloadFile> downloadQue;
+    private DownloadSet downloadSet;
 
     public ServerManager(Handler _handler)
     {
         handler = _handler;
-        downloadQue = new ArrayDeque<>(50);
-        serverHttp = new HTTPSeverConnector(handler, downloadQue);
+        downloadSet = new DownloadSet();
+        serverHttp = new HTTPSeverConnector(handler, downloadSet);
     }
 
     public boolean requestSetDir(String path)
@@ -110,13 +110,46 @@ public class ServerManager
         return fileList;
     }
 
+    public ArrayList<FileItem> getDownloadFiles()
+    {
+        ArrayList<FileItem> fileList = new ArrayList<>();
+        synchronized (downloadSet)
+        {
+            if(downloadSet.downloading!=null)
+                fileList.add(new FileItem(downloadSet.downloading.target, downloadSet.downloading.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, 0, downloadSet.downloading));
+
+            for(DownloadFile item : downloadSet.downloadQue)
+            {
+                fileList.add(new FileItem(item.target, item.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, 0, item));
+            }
+        }
+        return fileList;
+    }
+
     public void addDownload(String fullPath, String name, boolean isDirectory)
     {
-        synchronized (downloadQue)
+        synchronized (downloadSet)
         {
-            downloadQue.addLast(new DownloadFile(currentServerInfo, fullPath, name, isDirectory));
-            downloadQue.notify();
+            downloadSet.downloadQue.addLast(new DownloadFile(currentServerInfo, fullPath, name, isDirectory));
+            downloadSet.notify();
         }
+    }
+
+    public int cancelDownload(ArrayList<FileItem> list)
+    {
+        int count=0;
+        synchronized (downloadSet)
+        {
+            for(FileItem item : list)
+            {
+                if(item.odata==downloadSet.downloading)
+                    downloadSet.downloading = null;
+                else
+                    downloadSet.downloadQue.remove(item.odata);
+            }
+            downloadSet.notify();
+        }
+        return count;
     }
 
     private ArrayList<FileItem> getServerList()

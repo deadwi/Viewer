@@ -313,6 +313,9 @@ public class FileManager
 
     static public void sortFilelist(ArrayList<FileItem> fileList, int sortType)
     {
+        if(fileList==null)
+            return;
+
         switch(sortType)
         {
             case SORT_NONE:

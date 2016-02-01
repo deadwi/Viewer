@@ -381,9 +381,12 @@ public class FullscreenActivity extends AppCompatActivity
         }
 
         int imageFileCount = 0;
-        for(FileItem item : files)
-            if (fileManager.isImageFile(item.name))
-                imageFileCount++;
+        if(files!=null)
+        {
+            for (FileItem item : files)
+                if (fileManager.isImageFile(item.name))
+                    imageFileCount++;
+        }
         if(imageFileCount==0)
             return false;
 

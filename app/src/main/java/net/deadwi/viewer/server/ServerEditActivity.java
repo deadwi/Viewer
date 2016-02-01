@@ -22,6 +22,8 @@ import net.deadwi.viewer.server.ServerStorage;
  */
 public class ServerEditActivity  extends AppCompatActivity
 {
+    private String path;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +45,20 @@ public class ServerEditActivity  extends AppCompatActivity
                 overridePendingTransition(0, 0);
             }
         });
+
+        // default
+        ((RadioButton)findViewById(R.id.radioMethodHttp)).setChecked(true);
+
+        // edit server info?
+        path = getIntent().getStringExtra(ServerListActivity.MSG_DATA_PATH);
+        if(path!=null)
+        {
+            ServerInfo info = ServerStorage.getInstance().getServerInfo(Integer.parseInt(path));
+            ((EditText)findViewById(R.id.editTextTitle)).setText(info.title);
+            ((EditText)findViewById(R.id.editTextURL)).setText(info.url);
+            ((EditText)findViewById(R.id.editTextUser)).setText(info.user);
+            ((EditText)findViewById(R.id.editTextPassword)).setText(info.password);
+        }
     }
 
     @Override
@@ -101,7 +117,11 @@ public class ServerEditActivity  extends AppCompatActivity
         info.url = ((EditText)findViewById(R.id.editTextURL)).getText().toString();
         info.user = ((EditText)findViewById(R.id.editTextUser)).getText().toString();
         info.password = ((EditText)findViewById(R.id.editTextPassword)).getText().toString();
-        ServerStorage.getInstance().updateServer(ServerStorage.INDEX_NEW,info);
+
+        if(path!=null)
+            ServerStorage.getInstance().updateServer(Integer.parseInt(path),info);
+        else
+            ServerStorage.getInstance().updateServer(ServerStorage.INDEX_NEW,info);
         return true;
     }
 
