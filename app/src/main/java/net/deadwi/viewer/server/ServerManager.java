@@ -117,11 +117,14 @@ public class ServerManager
         synchronized (downloadSet)
         {
             if(downloadSet.downloading!=null)
-                fileList.add(new FileItem(downloadSet.downloading.target, downloadSet.downloading.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, 0, downloadSet.downloading));
+                fileList.add(new FileItem(FileManager.getNameFromFullpath(downloadSet.downloading.target),
+                        downloadSet.downloading.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE,
+                        downloadSet.downloading.size,
+                        downloadSet.downloading));
 
             for(DownloadFile item : downloadSet.downloadQue)
             {
-                fileList.add(new FileItem(item.target, item.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, 0, item));
+                fileList.add(new FileItem(FileManager.getNameFromFullpath(item.target), item.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, item.size, item));
             }
         }
 
@@ -148,11 +151,11 @@ public class ServerManager
         return fileList;
     }
 
-    public void addDownload(String fullPath, String name, boolean isDirectory)
+    public void addDownload(String fullPath, String name, long size, boolean isDirectory)
     {
         synchronized (downloadSet)
         {
-            downloadSet.downloadQue.addLast(new DownloadFile(currentServerInfo, fullPath, name, isDirectory));
+            downloadSet.downloadQue.addLast(new DownloadFile(currentServerInfo, fullPath, name, size, isDirectory));
             downloadSet.notify();
         }
     }

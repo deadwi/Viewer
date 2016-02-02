@@ -195,7 +195,7 @@ public class CustomAdapter extends BaseAdapter
             list = fileManager.getCurrentFiles();
         else
             list = fileManager.getMatchFiles(keyword);
-        bookmarkList = Bookmark.getInstance().loadBookmark( fileManager.getCurrentDir() );
+        bookmarkList = Bookmark.getInstance().loadBookmarkWithClean( fileManager.getCurrentDir(), list );
     }
 }
 

@@ -10,13 +10,15 @@ public class DownloadFile
     public String fullPath;
     // name with path (making path)
     public String target;
+    public long size;
     public boolean isDirectory;
 
-    public DownloadFile(ServerInfo _serverInfo,String _fullPath, String _target, boolean _isDirectory)
+    public DownloadFile(ServerInfo _serverInfo,String _fullPath, String _target, long _size, boolean _isDirectory)
     {
         serverInfo = _serverInfo;
         fullPath = _fullPath;
         target = _target;
+        size = _size;
         isDirectory = _isDirectory;
     }
 }

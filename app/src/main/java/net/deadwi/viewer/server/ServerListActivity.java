@@ -323,7 +323,7 @@ public class ServerListActivity  extends AppCompatActivity
         {
             isViewServer = true;
             currentPath = path;
-            refreshFileList(false);
+            refreshFileList(true);
         }
         else if(msg.what==EVENT_UPDATE_LIST_FAIL)
         {

@@ -117,7 +117,11 @@ public class ServerListAdapter extends BaseAdapter
         else if(list.get(position).type == FileItem.TYPE_DIR)
         {
             textHead.setText("D");
-            textInfo.setText("");
+
+            String info = "";
+            if(list.get(position).date!=null)
+                info += " "+list.get(position).date;
+            textInfo.setText(info);
             checkbox.setVisibility(View.VISIBLE);
             checkbox.setChecked( list.get(position).checked );
         }
@@ -129,6 +133,8 @@ public class ServerListAdapter extends BaseAdapter
                 textHead.setText("F");
 
             String info = FileManager.getFileSizeText(list.get(position).size);
+            if(list.get(position).date!=null)
+                info += " "+list.get(position).date;
             textInfo.setText(info);
             checkbox.setVisibility(View.VISIBLE);
             checkbox.setChecked(list.get(position).checked);
@@ -232,7 +238,7 @@ public class ServerListAdapter extends BaseAdapter
         {
             if(item.checked == false)
                 continue;
-            serverManager.addDownload( item.getFullPath(), item.name, item.type==FileItem.TYPE_DIR );
+            serverManager.addDownload( item.getFullPath(), item.name, item.size, item.type==FileItem.TYPE_DIR );
             count++;
         }
         return count;

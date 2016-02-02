@@ -313,31 +313,21 @@ public class FastImageActivity extends AppCompatActivity
 
     private void nextBook()
     {
-        String bookPath = FileManager.getNextFileOrderByAlphaNum(pc.getBookPath());
-        if(bookPath!=null)
-        {
-            Intent intent = getIntent();
-            intent.putExtra(FullscreenActivity.MSG_DATA_BOOK_PATH,bookPath);
-            setResult(RESULT_OK, intent);
-            closeViewPage(true);
-        }
+        openNextBook(true);
     }
 
     private void previousBook()
     {
-        String bookPath = FileManager.getPreviousFileOrderByAlphaNum(pc.getBookPath());
-        if(bookPath!=null)
-        {
-            Intent intent = getIntent();
-            intent.putExtra(FullscreenActivity.MSG_DATA_BOOK_PATH,bookPath);
-            setResult(RESULT_OK, intent);
-            closeViewPage(true);
-        }
+        openNextBook(false);
     }
 
     private void openNextBook(boolean ascendOrder)
     {
-        String bookPath = FileManager.getNextFileOrderByAlphaNum(pc.getBookPath());
+        String bookPath;
+        if(ascendOrder)
+            bookPath = FileManager.getNextFileOrderByAlphaNum(pc.getBookPath());
+        else
+            bookPath = FileManager.getPreviousFileOrderByAlphaNum(pc.getBookPath());
         if(bookPath!=null)
         {
             Intent intent = getIntent();
@@ -345,6 +335,9 @@ public class FastImageActivity extends AppCompatActivity
             setResult(RESULT_OK, intent);
             closeViewPage(true);
         }
-
+        else
+        {
+            Toast.makeText(this.getApplicationContext(), "There is no book.", Toast.LENGTH_SHORT).show();
+        }
     }
 }

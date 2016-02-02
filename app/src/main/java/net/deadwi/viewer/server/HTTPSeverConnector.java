@@ -11,6 +11,7 @@ import android.util.Log;
 
 import net.deadwi.viewer.FileItem;
 import net.deadwi.viewer.FileManager;
+import net.deadwi.viewer.Option;
 import net.deadwi.viewer.server.ServerListActivity;
 
 import org.jsoup.Connection;
@@ -137,6 +138,7 @@ public class HTTPSeverConnector
                             downloadSet.downloadQue.addFirst(new DownloadFile(df.serverInfo,
                                     item.getFullPath(),
                                     FileManager.getFullPath(df.target, item.name),
+                                    item.size,
                                     item.type == FileItem.TYPE_DIR) );
                         }
                         downloadSet.downloading = null;
@@ -191,7 +193,7 @@ public class HTTPSeverConnector
 
         private FileOutputStream getFileOutputStream(DownloadFile df) throws IOException
         {
-            File file = FileManager.getFileWithDirectory(FileManager.getFullPath(downloadPath,df.target));
+            File file = FileManager.getFileWithDirectory(FileManager.getFullPath(Option.getInstance().getDownloadPath(),df.target));
             if(file==null)
                 return null;
             return new FileOutputStream(file);
@@ -320,9 +322,9 @@ public class HTTPSeverConnector
 
     static private long getFileSize(String value)
     {
-        long size=0;
+        double size=0;
         if(value==null || value.length()==0)
-            return size;
+            return 0;
 
         long unit=1;
         char last = value.charAt(value.length() - 1);
@@ -348,12 +350,12 @@ public class HTTPSeverConnector
 
         try
         {
-            size =  Long.parseLong(value);
+            size =  Double.parseDouble(value);
         }
         catch (Exception e)
         {
         }
-        return size*unit;
+        return (long)(size*unit);
     }
 
     public HTTPSeverConnector(Handler _handler, DownloadSet _downloadSet)
@@ -362,8 +364,6 @@ public class HTTPSeverConnector
         downloadSet = _downloadSet;
         fileThread = new DownloadFileThread();
         fileThread.start();
-
-        downloadPath = Environment.getExternalStorageDirectory().getAbsolutePath();
     }
 
     public void connect(String url, String user, String password)

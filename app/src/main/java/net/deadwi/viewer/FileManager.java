@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.io.File;
 
+import android.os.Environment;
 import android.util.Log;
 
 import net.deadwi.library.MinizipWrapper;
@@ -138,6 +139,20 @@ public class FileManager
         if(currentPath.isEmpty() || (currentPath.charAt(currentPath.length()-1)!='/' && currentPath.charAt(currentPath.length()-1)!='\\'))
             currentPath += "/";
         currentPath += name;
+    }
+
+    static public String getExternalStoragePath()
+    {
+        String path = getFullPath(Environment.getExternalStorageDirectory().getAbsolutePath(),"fastview");
+        File f = new File(path);
+        if(f.exists()==false && f.mkdir()==false)
+            return null;
+        return path;
+    }
+
+    static public boolean removeFile(String path)
+    {
+        return new File(path).delete();
     }
 
     static public boolean isDirectory(String path)

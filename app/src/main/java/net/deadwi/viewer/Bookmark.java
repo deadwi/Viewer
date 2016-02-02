@@ -52,23 +52,26 @@ public class Bookmark {
         return items;
     }
 
-    public void saveBookmark(String dir, ArrayList<BookmarkItem> items)
+    public ArrayList<BookmarkItem> loadBookmarkWithClean(String dir, ArrayList<FileItem> list)
     {
-        //Log.d("BOOK","Save : "+getBookmarkPath(dir));
-        try
+        ArrayList<BookmarkItem> bookmarkList = loadBookmark(dir);
+        for(BookmarkItem item : bookmarkList)
         {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(getBookmarkPath(dir)));
-            for(BookmarkItem item : items)
+            boolean isExist = false;
+            for(FileItem file : list)
             {
-                //Log.d("BOOK","Save line : "+item.getLine());
-                bw.write(item.getLine());
+                if(item.filename.compareTo(file.name)==0)
+                {
+                    isExist = true;
+                    break;
+                }
             }
-            bw.flush();
-            bw.close();
+            if(isExist==false)
+                bookmarkList.remove(item);
         }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        saveBookmark(dir, bookmarkList);
+
+        return bookmarkList;
     }
 
     public void updateBookmark(String dir, BookmarkItem item)
@@ -97,6 +100,31 @@ public class Bookmark {
     private String getBookmarkPath(String dir)
     {
         return savePath+dir.replace('/','_')+".bookmark";
+    }
+
+    private void saveBookmark(String dir, ArrayList<BookmarkItem> items)
+    {
+        //Log.d("BOOK","Save : "+getBookmarkPath(dir));
+        try
+        {
+            if(items.isEmpty())
+            {
+                FileManager.removeFile(getBookmarkPath(dir));
+                return;
+            }
+
+            BufferedWriter bw = new BufferedWriter(new FileWriter(getBookmarkPath(dir)));
+            for(BookmarkItem item : items)
+            {
+                //Log.d("BOOK","Save line : "+item.getLine());
+                bw.write(item.getLine());
+            }
+            bw.flush();
+            bw.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 

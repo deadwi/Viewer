@@ -80,10 +80,12 @@ public class FullscreenActivity extends AppCompatActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         else
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        //Bookmark.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
-        //ServerStorage.getInstance().setSavePath(getApplicationContext().getFilesDir().getAbsolutePath());
-        Bookmark.getInstance().setSavePath(getApplicationContext().getExternalFilesDir(null).getAbsolutePath());
-        ServerStorage.getInstance().setSavePath(getApplicationContext().getExternalFilesDir(null).getAbsolutePath());
+
+        String savePath = FileManager.getExternalStoragePath();
+        if(savePath==null)
+            savePath = getApplicationContext().getFilesDir().getAbsolutePath();
+        Bookmark.getInstance().setSavePath(savePath);
+        ServerStorage.getInstance().setSavePath(savePath);
 
         setContentView(R.layout.activity_fullscreen);
 
