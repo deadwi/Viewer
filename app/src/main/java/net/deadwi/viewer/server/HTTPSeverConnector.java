@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Random;
@@ -245,64 +246,17 @@ public class HTTPSeverConnector
 
     static public ListResult getListResult(String url, String path, String user, String password)
     {
-        String fullPath = FileManager.getFullPath(url,path);
+        String fullPath = FileManager.getFullPath(url, path);
+        // for comicglass server
+        if(fullPath.endsWith("/")==false)
+            fullPath += "/";
+
         ListResult lr = new ListResult(path);
         try
         {
             Document document = getJsoupConnection(fullPath, user, password).get();
-            Elements trs = document.getElementsByTag("tr");
-
-            int indexName=-1;
-            int indexDate=-1;
-            int indexSize=-1;
-            boolean isFirstRow = true;
-            for(Element tr : trs)
-            {
-                Elements tds = tr.children(); // td, th
-                if(tds==null || tds.size()==0)
-                    continue;
-
-                if(isFirstRow)
-                {
-                    for(int i=0;i<tds.size();i++)
-                    {
-                        String f = tds.get(i).text().trim().toLowerCase();
-                        if(f.compareTo("name")==0)
-                            indexName = i;
-                        else if(f.compareTo("last modified")==0)
-                            indexDate = i;
-                        else if(f.compareTo("size")==0)
-                            indexSize = i;
-                    }
-                    isFirstRow = false;
-                    if(indexName==-1)
-                    {
-                        lr.errorMessage = "Invalid File index page";
-                        break;
-                    }
-                }
-                else
-                {
-                    if(indexName>=tds.size())
-                        continue;
-
-                    String name = tds.get(indexName).text();
-                    if(name.compareTo("/")==0 || name.trim().toLowerCase().startsWith("parent directory"))
-                        continue;
-
-                    int type = FileItem.TYPE_FILE;
-                    long size = indexSize < tds.size() ? getFileSize(tds.get(indexSize).text()) : 0;
-                    if(name.endsWith("/"))
-                    {
-                        type = FileItem.TYPE_DIR;
-                        name = name.substring(0, name.length()-1);
-                    }
-                    lr.files.add(new FileItem(path, name,
-                            indexDate < tds.size() ? tds.get(indexDate).text() : "",
-                            type,
-                            size));
-                }
-            }
+            if(getListResultFromTR(document,lr)==false)
+                getListResultFromLink(document, lr);
         }
         catch (HttpStatusException ex)
         {
@@ -318,6 +272,104 @@ public class HTTPSeverConnector
             ex.printStackTrace();
         }
         return lr;
+    }
+
+    static public boolean getListResultFromTR(Document document,ListResult lr) throws Exception
+    {
+        Elements trs = document.getElementsByTag("tr");
+        if(trs.isEmpty())
+            return false;
+
+        int indexName=-1;
+        int indexDate=-1;
+        int indexSize=-1;
+        boolean isFirstRow = true;
+        for(Element tr : trs)
+        {
+            Elements tds = tr.children(); // td, th
+            if(tds==null || tds.size()==0)
+                continue;
+
+            if(isFirstRow)
+            {
+                for(int i=0;i<tds.size();i++)
+                {
+                    String f = tds.get(i).text().trim().toLowerCase();
+                    if(f.compareTo("name")==0)
+                        indexName = i;
+                    else if(f.compareTo("last modified")==0)
+                        indexDate = i;
+                    else if(f.compareTo("size")==0)
+                        indexSize = i;
+                }
+                isFirstRow = false;
+                if(indexName==-1)
+                {
+                    lr.errorMessage = "Invalid File index page";
+                    break;
+                }
+            }
+            else
+            {
+                if(indexName>=tds.size())
+                    continue;
+
+                String name = tds.get(indexName).text();
+                if(name.compareTo("/")==0 || name.trim().toLowerCase().startsWith("parent directory"))
+                    continue;
+
+                int type = FileItem.TYPE_FILE;
+                long size = indexSize < tds.size() ? getFileSize(tds.get(indexSize).text()) : 0;
+                if(name.endsWith("/"))
+                {
+                    type = FileItem.TYPE_DIR;
+                    name = name.substring(0, name.length()-1);
+                }
+                lr.files.add(new FileItem(lr.path, name,
+                        indexDate < tds.size() ? tds.get(indexDate).text() : "",
+                        type,
+                        size));
+            }
+        }
+        return true;
+    }
+
+    static public boolean getListResultFromLink(Document document,ListResult lr) throws Exception
+    {
+        Elements links = document.getElementsByTag("a");
+        if(links.isEmpty())
+            return false;
+
+        for(Element link : links)
+        {
+            String path = link.attr("href");
+            String title = link.attr("booktitle");
+            String date = link.attr("bookdate");
+            String size = link.attr("booksize");
+            if(path==null || title==null)
+                continue;
+            path = URLDecoder.decode(path, "utf-8");
+
+            int type = FileItem.TYPE_FILE;
+            if(path.endsWith("/"))
+            {
+                type = FileItem.TYPE_DIR;
+                path = path.substring(0, path.length()-1);
+            }
+            lr.files.add(new FileItem(lr.path,
+                    path,
+                    date==null ? "" : date,
+                    type,
+                    getFileSize(size)));
+            /*
+            lr.files.add(new FileItem(FileManager.getFullPath(lr.path,FileManager.getPathFromFullpath(path, path)),
+                    title,
+                    date==null ? "" : date,
+                    type,
+                    getFileSize(size)));
+                    */
+        }
+        return true;
     }
 
     static private long getFileSize(String value)
