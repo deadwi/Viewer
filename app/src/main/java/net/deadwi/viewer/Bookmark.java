@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 
 public class Bookmark {
     private static Bookmark ourInstance = new Bookmark();
@@ -55,8 +56,11 @@ public class Bookmark {
     public ArrayList<BookmarkItem> loadBookmarkWithClean(String dir, ArrayList<FileItem> list)
     {
         ArrayList<BookmarkItem> bookmarkList = loadBookmark(dir);
-        for(BookmarkItem item : bookmarkList)
+        Iterator<BookmarkItem> iter = bookmarkList.iterator();
+        //for(BookmarkItem item : bookmarkList)
+        while (iter.hasNext())
         {
+            BookmarkItem item = iter.next();
             boolean isExist = false;
             for(FileItem file : list)
             {
@@ -67,7 +71,8 @@ public class Bookmark {
                 }
             }
             if(isExist==false)
-                bookmarkList.remove(item);
+                iter.remove();
+                //bookmarkList.remove(item);
         }
         saveBookmark(dir, bookmarkList);
 

@@ -30,7 +30,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Deque;
 import java.util.Random;
 import java.util.Timer;
@@ -344,7 +347,7 @@ public class HTTPSeverConnector
         {
             String path = link.attr("href");
             String title = link.attr("booktitle");
-            String date = link.attr("bookdate");
+            String timestamp = link.attr("bookdate");
             String size = link.attr("booksize");
             if(path==null || title==null)
                 continue;
@@ -358,18 +361,27 @@ public class HTTPSeverConnector
             }
             lr.files.add(new FileItem(lr.path,
                     path,
-                    date==null ? "" : date,
+                    getDate(timestamp),
                     type,
                     getFileSize(size)));
-            /*
-            lr.files.add(new FileItem(FileManager.getFullPath(lr.path,FileManager.getPathFromFullpath(path, path)),
-                    title,
-                    date==null ? "" : date,
-                    type,
-                    getFileSize(size)));
-                    */
         }
         return true;
+    }
+
+    static private String getDate(String timeStamp)
+    {
+        if(timeStamp==null)
+            return "";
+        try
+        {
+            long t = Long.parseLong(timeStamp) * 1000;
+            DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            Date netDate = (new Date(t));
+            return sdf.format(netDate);
+        }
+        catch(Exception ex){
+            return "";
+        }
     }
 
     static private long getFileSize(String value)

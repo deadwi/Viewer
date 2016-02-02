@@ -4,3 +4,5 @@
 -keep class net.deadwi.library.FreeImageWrapper { *; }
 -keep class net.deadwi.library.MinizipWrapper { *; }
 -keep class net.deadwi.viewer.FileItem { public *; }
+-keep class org.vudroid.** { *; }
+-keep class org.jsoup.** { *; }

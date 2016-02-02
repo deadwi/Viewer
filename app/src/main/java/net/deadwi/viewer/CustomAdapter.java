@@ -192,10 +192,15 @@ public class CustomAdapter extends BaseAdapter
     public void updateFileList(String keyword)
     {
         if(keyword.isEmpty())
+        {
             list = fileManager.getCurrentFiles();
+            bookmarkList = Bookmark.getInstance().loadBookmarkWithClean(fileManager.getCurrentDir(), list);
+        }
         else
+        {
             list = fileManager.getMatchFiles(keyword);
-        bookmarkList = Bookmark.getInstance().loadBookmarkWithClean( fileManager.getCurrentDir(), list );
+            bookmarkList = Bookmark.getInstance().loadBookmark(fileManager.getCurrentDir());
+        }
     }
 }
 
