@@ -110,13 +110,15 @@ public class OptionTabActivity extends AppCompatActivity
         {
             if(position==0)
                 return Fragment.instantiate(getBaseContext(), OptionBasicFragment.class.getName());
-            return Fragment.instantiate(getBaseContext(), OptionImageFragment.class.getName());
+            else if(position==1)
+                return Fragment.instantiate(getBaseContext(), OptionImageFragment.class.getName());
+            return Fragment.instantiate(getBaseContext(), OptionInfoFragment.class.getName());
         }
 
         @Override
         public int getCount()
         {
-            return 2;
+            return 3;
         }
 
         @Override
@@ -127,6 +129,8 @@ public class OptionTabActivity extends AppCompatActivity
                     return "BASIC";
                 case 1:
                     return "IMAGE";
+                case 2:
+                    return "INFO";
             }
             return null;
         }
@@ -137,13 +141,22 @@ public class OptionTabActivity extends AppCompatActivity
         List<Fragment> fragmentList = getSupportFragmentManager().getFragments();
         for(Fragment f : fragmentList)
         {
+            if(f.isVisible()==false)
+                continue;
+
             if(f instanceof OptionBasicFragment)
             {
+                Log.d("OPTION","setOptionFromUI : Basic");
                 ((OptionBasicFragment) f).setOptionFromUI(f.getView());
             }
             else if(f instanceof OptionImageFragment)
             {
+                Log.d("OPTION","setOptionFromUI : Image");
                 ((OptionImageFragment) f).setOptionFromUI(f.getView());
+            }
+            else if(f instanceof OptionInfoFragment)
+            {
+                // nothing
             }
         }
 

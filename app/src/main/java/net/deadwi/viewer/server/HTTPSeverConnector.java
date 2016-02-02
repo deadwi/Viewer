@@ -169,12 +169,22 @@ public class HTTPSeverConnector
                             break;
                     }
                     bout.close();
-
                     Log.d("HTTP", "download end : " + df.target);
                 }
                 catch (Exception ex)
                 {
                     ex.printStackTrace();
+                }
+                finally
+                {
+                    // download complete (or error)
+                    synchronized (downloadSet)
+                    {
+                        downloadSet.downloading=null;
+                    }
+                    Message msg = Message.obtain();
+                    msg.what = ServerListActivity.EVENT_UPDATE_DOWNLOAD_LIST;
+                    handler.sendMessage(msg);
                 }
             }
         }

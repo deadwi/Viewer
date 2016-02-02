@@ -1,5 +1,6 @@
 package net.deadwi.viewer;
 
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -8,11 +9,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
+
+import java.io.File;
 
 /**
  * Created by jihun.jo on 2015-12-31.
@@ -23,8 +27,6 @@ public class OptionBasicFragment extends Fragment
                              Bundle savedInstanceState)
     {
         View view = inflater.inflate(R.layout.activity_option, container, false);
-
-        ((TextView)view.findViewById(R.id.textViewVersion)).setText("Fast Viewer "+BuildConfig.VERSION_NAME+" By deadwi");
         setUIFromOption(view);
         return view;
     }
@@ -127,6 +129,32 @@ public class OptionBasicFragment extends Fragment
                 ((RadioButton) view.findViewById(R.id.radioButtonEink0)).setChecked(true);
                 break;
         }
+
+        final EditText editHome = (EditText)view.findViewById(R.id.editTextHome);
+        editHome.setText(Option.getInstance().getHomePath());
+        view.findViewById(R.id.buttonFileHome).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FileChooser fileChooser = new FileChooser(view.getContext()).setFileListener(new FileChooser.FileSelectedListener() {
+                    @Override public void fileSelected(final File file) {
+                        editHome.setText(file.getAbsolutePath());
+                    }});
+                fileChooser.showDialog();
+            }
+        });
+
+        final EditText editDown = (EditText)view.findViewById(R.id.editTextDownload);
+        editDown.setText(Option.getInstance().getDownloadPath());
+        view.findViewById(R.id.buttonFileDown).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FileChooser fileChooser = new FileChooser(view.getContext()).setFileListener(new FileChooser.FileSelectedListener() {
+                    @Override public void fileSelected(final File file) {
+                        editDown.setText(file.getAbsolutePath());
+                    }});
+                fileChooser.showDialog();
+            }
+        });
     }
 
     public void setOptionFromUI(View view)
@@ -178,5 +206,8 @@ public class OptionBasicFragment extends Fragment
             Option.getInstance().setEinkCleanOption(10);
         else
             Option.getInstance().setEinkCleanOption(0);
+
+        Option.getInstance().setHomePath(((EditText) view.findViewById(R.id.editTextHome)).getText().toString());
+        Option.getInstance().setDownloadPath(((EditText) view.findViewById(R.id.editTextDownload)).getText().toString());
     }
 }

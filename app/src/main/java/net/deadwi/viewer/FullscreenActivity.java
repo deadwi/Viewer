@@ -45,6 +45,7 @@ public class FullscreenActivity extends AppCompatActivity
     public static final String MSG_DATA_VIEW_FILE = "view_file";
     public static final String MSG_DATA_VIEW_INDEX = "view_index";
     public static final String MSG_DATA_FILES = "files";
+    public static final String MSG_DATA_BOOK_PATH = "book_path";
 
     private FileManager fileManager;
     private TextView currentNameTextView;
@@ -113,7 +114,7 @@ public class FullscreenActivity extends AppCompatActivity
         findViewById(R.id.buttonHome).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fileManager.setCurrentDir("/extsd");
+                fileManager.setCurrentDir( Option.getInstance().getHomePath() );
                 refreshFileList(true);
             }
         });
@@ -199,6 +200,29 @@ public class FullscreenActivity extends AppCompatActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         refreshFileList(false);
         Option.getInstance().setChanged(false);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent)
+    {
+        Log.d("MAIN","onActivityResult");
+        super.onActivityResult(requestCode, resultCode, intent);
+        if(resultCode==RESULT_OK)
+        {
+            String bookPath = intent.getStringExtra(MSG_DATA_BOOK_PATH);
+            if(bookPath!=null)
+            {
+                Message msg = Message.obtain();
+                Bundle data = new Bundle();
+                if(FileManager.isExist(bookPath)==false)
+                    return;
+                data.putString(FullscreenActivity.MSG_DATA_PATH, FileManager.getPathFromFullpath(bookPath, "/"));
+                data.putString(FullscreenActivity.MSG_DATA_NAME, FileManager.getNameFromFullpath(bookPath));
+                msg.setData(data);
+                msg.what = FullscreenActivity.EVENT_VIEW_FILE;
+                handler.sendMessage(msg);
+            }
+        }
     }
 
     @Override
@@ -408,7 +432,7 @@ public class FullscreenActivity extends AppCompatActivity
         myIntent.putExtra(MSG_DATA_FILES, pathArray);
         myIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
 
-        startActivity(myIntent);
+        startActivityForResult(myIntent, 0);
         overridePendingTransition(0, 0);
         return true;
     }
@@ -421,7 +445,7 @@ public class FullscreenActivity extends AppCompatActivity
         pdfIntent.putExtra(MSG_DATA_PATH, viewName);
         pdfIntent.putExtra(MSG_DATA_VIEW_INDEX, viewIndex);
 
-        startActivity(pdfIntent);
+        startActivityForResult(pdfIntent, 0);
         overridePendingTransition(0, 0);
         return true;
     }

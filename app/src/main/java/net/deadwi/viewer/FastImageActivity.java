@@ -41,7 +41,6 @@ public class FastImageActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         createPageControl();
-        //createFooter();
 
         FreeImageWrapper.init();
         DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
@@ -212,6 +211,20 @@ public class FastImageActivity extends AppCompatActivity
                 closeViewPage(true);
             }
         });
+        pageControl.findViewById(R.id.buttonPrev).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                pageControl.dismiss();
+                previousBook();
+            }
+        });
+        pageControl.findViewById(R.id.buttonNext).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                pageControl.dismiss();
+                nextBook();
+            }
+        });
         ((SeekBar)pageControl.findViewById(R.id.seekPageBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
@@ -235,23 +248,6 @@ public class FastImageActivity extends AppCompatActivity
         pageControl.getWindow().setAttributes(params);
     }
 
-    private void createFooter()
-    {
-        footer = new TextView(this);
-        footer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        footer.setGravity(Gravity.CENTER_HORIZONTAL);
-        footer.setBackgroundColor(Color.parseColor("#FFFFFF"));
-        footer.setPadding(20, 10, 10, 10);
-        footer.setTextColor(Color.parseColor("#000000"));
-        footer.setTextSize(10);
-        footer.setText("텍스트");
-
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.BOTTOM;
-        params.width = FrameLayout.LayoutParams.MATCH_PARENT;
-        this.addContentView(footer, params);
-    }
-
     private void setPageControlTitle(String title)
     {
         ((TextView)pageControl.findViewById(R.id.textTitle)).setText(title);
@@ -266,7 +262,7 @@ public class FastImageActivity extends AppCompatActivity
 
     private void nextPage()
     {
-        Log.d("FASTIMAGE","Page(next) : "+(pc.getCurrentPageIndex()+1)+"/"+pc.getPageCount());
+        Log.d("FASTIMAGE", "Page(next) : " + (pc.getCurrentPageIndex() + 1) + "/" + pc.getPageCount());
         if (pc.requestNextPage()==false)
         {
             Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_LAST_PAGE, Toast.LENGTH_SHORT).show();
@@ -275,7 +271,7 @@ public class FastImageActivity extends AppCompatActivity
 
     private void previousPage()
     {
-        Log.d("FASTIMAGE","Page(prev) : "+(pc.getCurrentPageIndex()+1)+"/"+pc.getPageCount());
+        Log.d("FASTIMAGE", "Page(prev) : " + (pc.getCurrentPageIndex() + 1) + "/" + pc.getPageCount());
         if (pc.requestPreviousPage()==false)
         {
             Toast.makeText(this.getApplicationContext(), R.string.MESSAGE_FIRST_PAGE, Toast.LENGTH_SHORT).show();
@@ -313,5 +309,42 @@ public class FastImageActivity extends AppCompatActivity
     private void requestImage(int fileIndex, int viewIndex, boolean isPrev)
     {
         pc.requestPage(fileIndex, viewIndex, isPrev);
+    }
+
+    private void nextBook()
+    {
+        String bookPath = FileManager.getNextFileOrderByAlphaNum(pc.getBookPath());
+        if(bookPath!=null)
+        {
+            Intent intent = getIntent();
+            intent.putExtra(FullscreenActivity.MSG_DATA_BOOK_PATH,bookPath);
+            setResult(RESULT_OK, intent);
+            closeViewPage(true);
+        }
+    }
+
+    private void previousBook()
+    {
+        String bookPath = FileManager.getPreviousFileOrderByAlphaNum(pc.getBookPath());
+        if(bookPath!=null)
+        {
+            Intent intent = getIntent();
+            intent.putExtra(FullscreenActivity.MSG_DATA_BOOK_PATH,bookPath);
+            setResult(RESULT_OK, intent);
+            closeViewPage(true);
+        }
+    }
+
+    private void openNextBook(boolean ascendOrder)
+    {
+        String bookPath = FileManager.getNextFileOrderByAlphaNum(pc.getBookPath());
+        if(bookPath!=null)
+        {
+            Intent intent = getIntent();
+            intent.putExtra(FullscreenActivity.MSG_DATA_BOOK_PATH,bookPath);
+            setResult(RESULT_OK, intent);
+            closeViewPage(true);
+        }
+
     }
 }

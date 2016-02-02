@@ -10,6 +10,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.PopupMenu;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,6 +34,7 @@ public class ServerListActivity  extends AppCompatActivity
     public static final int EVENT_UPDATE_LIST_FAIL = 2002;
     public static final int EVENT_SITE_EDIT = 3001;
     public static final int EVENT_SITE_DELETE = 3002;
+    public static final int EVENT_UPDATE_DOWNLOAD_LIST = 4001;
 
     public static final String MSG_DATA_NAME = "name";
     public static final String MSG_DATA_PATH = "path";
@@ -298,6 +300,7 @@ public class ServerListActivity  extends AppCompatActivity
 
     private void handleMessage(Message msg)
     {
+        Log.d("SEVER","handler : "+msg.what);
         String path = msg.getData().getString(MSG_DATA_PATH);
         String name = msg.getData().getString(MSG_DATA_NAME);
         int type = msg.getData().getInt(MSG_DATA_TYPE);
@@ -336,6 +339,11 @@ public class ServerListActivity  extends AppCompatActivity
         else if(msg.what==EVENT_SITE_DELETE)
         {
             popupDeleteServer(path);
+        }
+        else if(msg.what==EVENT_UPDATE_DOWNLOAD_LIST)
+        {
+            if(isViewServer==false)
+                refreshFileList(true);
         }
     }
 
@@ -419,8 +427,11 @@ public class ServerListActivity  extends AppCompatActivity
 
     private void cancelDownloadFiles()
     {
-        int count = listAdapter.cancelFiles();
-        refreshFileList(true);
+        if(isViewServer==false)
+        {
+            int count = listAdapter.cancelFiles();
+            refreshFileList(true);
+        }
     }
 
     private void viewDownloadProgress()

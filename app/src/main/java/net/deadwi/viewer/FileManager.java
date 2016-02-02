@@ -16,6 +16,7 @@ public class FileManager
     public static final int SORT_TYPE = 2;
     public static final int SORT_SIZE = 3;
     public static final int SORT_ALPHA_WITH_NUM = 4;
+    public static final int SORT_ALPHA_WITH_NUM_R = 1004;
     private static final int BUFFER = 1024*4;
 
     private boolean isShowHiddenFiles = false;
@@ -204,7 +205,7 @@ public class FileManager
 
     static public File getFileWithDirectory(String fullPath)
     {
-        String path = getPathFromFullpath(fullPath,"/");
+        String path = getPathFromFullpath(fullPath, "/");
         File pathFile = new File(path);
         if(pathFile.exists()==false)
         {
@@ -273,6 +274,38 @@ public class FileManager
         return newList;
     }
 
+    static public String getNextFileOrderByAlphaNum(String path)
+    {
+        return getNextFile(path, SORT_ALPHA_WITH_NUM);
+    }
+
+    static public String getPreviousFileOrderByAlphaNum(String path)
+    {
+        return getNextFile(path, SORT_ALPHA_WITH_NUM_R);
+    }
+
+    static public String getNextFile(String path, int sortType)
+    {
+        if(path==null)
+            return null;
+
+        String upperPath = getPathFromFullpath(path,"/");
+        String name = getNameFromFullpath(path);
+
+        ArrayList<FileItem> fileList = getFilelist(upperPath, true);
+        sortFilelist(fileList, sortType);
+
+        boolean foundPath=false;
+        for(FileItem item : fileList)
+        {
+            if(foundPath==true)
+                return item.getFullPath();
+            else if(item.name.compareTo(name)==0)
+                foundPath = true;
+        }
+        return null;
+    }
+
     static private ArrayList<FileItem> getFilelist(String path, boolean isShowHiddenFiles)
     {
         ArrayList<FileItem> fileList = new ArrayList<FileItem>();
@@ -335,6 +368,11 @@ public class FileManager
 
             case SORT_ALPHA_WITH_NUM:
                 Collections.sort(fileList, FileItem.CompareAlphIgnoreCaseWithNumber);
+                break;
+
+            case SORT_ALPHA_WITH_NUM_R:
+                Collections.sort(fileList, FileItem.CompareAlphIgnoreCaseWithNumber);
+                Collections.reverse(fileList);
                 break;
         }
     }

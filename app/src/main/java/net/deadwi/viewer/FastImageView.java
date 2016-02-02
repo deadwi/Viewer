@@ -9,6 +9,8 @@ import android.view.View;
 
 import net.deadwi.library.FreeImageWrapper;
 
+import java.io.File;
+
 /**
  * Created by jihun.jo on 2016-01-15.
  */
@@ -134,6 +136,13 @@ class FastImageViewPageController implements FastViewPageController
             return true;
         }
         return false;
+    }
+
+    public String getBookPath()
+    {
+        if(zipPath!=null)
+            return zipPath;
+        return path;
     }
 
     private int getStartPageIndex()

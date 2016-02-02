@@ -1,5 +1,7 @@
 package net.deadwi.viewer;
 
+import android.os.Environment;
+
 import net.deadwi.library.FreeImageWrapper;
 import net.deadwi.library.MinizipWrapper;
 
@@ -58,6 +60,8 @@ public class Option {
     private boolean isEnableColorInvert;
     private boolean isEnableFilterGray;
     private int filterGrayThreshold;
+    private String homePath;
+    private String downloadPath;
 
     private String lastCurrentPath;
     private String lastInnerPath;
@@ -98,6 +102,9 @@ public class Option {
         isEnableColorInvert=false;
         isEnableFilterGray=false;
         filterGrayThreshold=255;
+
+        homePath = "/extsd";
+        downloadPath = Environment.getExternalStorageDirectory().getAbsolutePath();
     }
 
     public void loadOption(String path)
@@ -138,6 +145,8 @@ public class Option {
         isEnableFilterGray = optionProperties.getProperty("option_filter_is_gray","false").compareTo("true")==0;
         filterGrayThreshold = Integer.parseInt(optionProperties.getProperty("option_filter_gray","255"));
 
+        homePath = optionProperties.getProperty("option_home_path", "/extsd");
+        downloadPath = optionProperties.getProperty("option_download_path", Environment.getExternalStorageDirectory().getAbsolutePath());
 
         lastCurrentPath = lastProperties.getProperty("last_current_path", null);
         lastInnerPath = lastProperties.getProperty("last_inner_path", null);
@@ -167,6 +176,9 @@ public class Option {
         optionProperties.setProperty("option_color_is_invert",(isEnableColorInvert ? "true" : "false"));
         optionProperties.setProperty("option_filter_is_gray",(isEnableFilterGray ? "true" : "false"));
         optionProperties.setProperty("option_filter_gray",""+filterGrayThreshold);
+
+        optionProperties.setProperty("option_home_path",homePath);
+        optionProperties.setProperty("option_download_path",downloadPath);
 
         try
         {
@@ -349,6 +361,11 @@ public class Option {
     public void setEnableFilterGray(boolean enable) { isEnableFilterGray = enable; }
     public int getFilterGrayThreshold() { return filterGrayThreshold; }
     public void setFilterGrayThreshold(int threshold) { filterGrayThreshold = threshold; }
+
+    public String getHomePath() { return homePath; }
+    public void setHomePath(String path) { homePath = path; }
+    public String getDownloadPath() { return downloadPath; }
+    public void setDownloadPath(String path) { downloadPath = path; }
 
     public String getLastCurrentPath() { return lastCurrentPath; }
     public String getLastInnerPath() { return lastInnerPath; }

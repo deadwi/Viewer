@@ -13,5 +13,6 @@ public interface FastViewPageController
     public void requestPage(int fileIndex, int viewIndex, boolean isPrev);
     public boolean requestNextPage();
     public boolean requestPreviousPage();
+    public String getBookPath();
 }
 

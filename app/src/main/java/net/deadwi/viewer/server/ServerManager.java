@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -110,7 +111,7 @@ public class ServerManager
         return fileList;
     }
 
-    public ArrayList<FileItem> getDownloadFiles()
+    public ArrayList<FileItem> getDownloadFiles(ArrayList<FileItem> viewList)
     {
         ArrayList<FileItem> fileList = new ArrayList<>();
         synchronized (downloadSet)
@@ -121,6 +122,27 @@ public class ServerManager
             for(DownloadFile item : downloadSet.downloadQue)
             {
                 fileList.add(new FileItem(item.target, item.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE, 0, item));
+            }
+        }
+
+        // download list에서 check한 항목 유지
+        if(viewList!=null && viewList.isEmpty()==false)
+        {
+            HashSet set = new HashSet();
+            for(FileItem item : viewList)
+            {
+                if(item.checked==false || item.odata==null)
+                    continue;;
+                set.add(item.odata);
+            }
+
+            if(set.isEmpty()==false)
+            {
+                for (FileItem item : fileList)
+                {
+                    if(set.contains(item.odata)==true)
+                        item.checked=true;
+                }
             }
         }
         return fileList;

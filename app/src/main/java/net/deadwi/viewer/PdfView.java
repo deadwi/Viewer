@@ -178,4 +178,9 @@ class PdfViewPageController implements FastViewPageController
         }
         return false;
     }
+
+    public String getBookPath()
+    {
+        return path;
+    }
 }

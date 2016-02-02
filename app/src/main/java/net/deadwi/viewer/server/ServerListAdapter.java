@@ -207,13 +207,15 @@ public class ServerListAdapter extends BaseAdapter
 
     public void updateDownloadList()
     {
-        list = serverManager.getDownloadFiles();
+        list = serverManager.getDownloadFiles(list);
     }
 
     public void checkAllFiles()
     {
         for(FileItem item : list)
-            if(item.type==FileItem.TYPE_FILE)
+            if(item.type==FileItem.TYPE_FILE ||
+                    item.type==FileItem.TYPE_DOWNLOAD_FILE ||
+                    item.type==FileItem.TYPE_DOWNLOAD_DIR)
                 item.checked = true;
     }
 
