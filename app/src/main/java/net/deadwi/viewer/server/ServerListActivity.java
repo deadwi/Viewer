@@ -35,6 +35,7 @@ public class ServerListActivity  extends AppCompatActivity
     public static final int EVENT_SITE_EDIT = 3001;
     public static final int EVENT_SITE_DELETE = 3002;
     public static final int EVENT_UPDATE_DOWNLOAD_LIST = 4001;
+    public static final int EVENT_UPDATE_DOWNLOAD_SIZE = 4002;
 
     public static final String MSG_DATA_NAME = "name";
     public static final String MSG_DATA_PATH = "path";
@@ -308,7 +309,7 @@ public class ServerListActivity  extends AppCompatActivity
 
     private void handleMessage(Message msg)
     {
-        Log.d("SEVER","handler : "+msg.what);
+        Log.d("SEVER", "handler : " + msg.what);
         String path = msg.getData().getString(MSG_DATA_PATH);
         String name = msg.getData().getString(MSG_DATA_NAME);
         int type = msg.getData().getInt(MSG_DATA_TYPE);
@@ -351,7 +352,15 @@ public class ServerListActivity  extends AppCompatActivity
         else if(msg.what==EVENT_UPDATE_DOWNLOAD_LIST)
         {
             if(isViewServer==false)
-                refreshFileList(true);
+            {
+                listAdapter.updateDownloadList();
+                listAdapter.notifyDataSetChanged();
+            }
+        }
+        else if(msg.what==EVENT_UPDATE_DOWNLOAD_SIZE)
+        {
+            if(isViewServer==false)
+                updateDownloadSize();
         }
     }
 
@@ -447,4 +456,22 @@ public class ServerListActivity  extends AppCompatActivity
         isViewServer = false;
         refreshFileList(true);
     }
+
+    private void updateDownloadSize()
+    {
+        listAdapter.updateDownloadSize();
+        listAdapter.notifyDataSetChanged();
+    }
+
+    /*
+    private void updateSingleItemView(int position)
+    {
+        listAdapter.notifyDataSetChanged();
+
+        int firstVisiblePosition = fileListView.getFirstVisiblePosition();
+        View view = fileListView.getChildAt(position - firstVisiblePosition);
+        TextView textInfo = (TextView)view.findViewById(R.id.textInfo);
+        textTitle.setText("Title Change");
+    }
+    */
 }

@@ -26,6 +26,7 @@ public class FileItem
     public int type;
     public long size;
     public Object odata;
+    public String additionalInfo;
     public boolean checked=false;
 
     public FileItem(String _path, String _name, int _type, long _size)

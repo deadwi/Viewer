@@ -128,10 +128,13 @@ public class ServerManager
         synchronized (downloadSet)
         {
             if(downloadSet.downloading!=null)
+            {
                 fileList.add(new FileItem(FileManager.getNameFromFullpath(downloadSet.downloading.target),
                         downloadSet.downloading.isDirectory ? FileItem.TYPE_DOWNLOAD_DIR : FileItem.TYPE_DOWNLOAD_FILE,
                         downloadSet.downloading.size,
                         downloadSet.downloading));
+                fileList.get(0).additionalInfo = FileManager.getFileSizeText(downloadSet.downloading.downloadSize);
+            }
 
             for(DownloadFile item : downloadSet.downloadQue)
             {
@@ -160,6 +163,16 @@ public class ServerManager
             }
         }
         return fileList;
+    }
+
+    public String getDownloadSize(Object odata)
+    {
+        synchronized (downloadSet)
+        {
+            if(downloadSet.downloading!=null && downloadSet.downloading==odata)
+                return FileManager.getFileSizeText(downloadSet.downloading.downloadSize);
+        }
+        return null;
     }
 
     public void addDownload(String fullPath, String name, long size, boolean isDirectory)

@@ -113,10 +113,12 @@ public class HTTPSeverConnector
     }
 
     private class DownloadFileThread extends Thread  {
+        private long updateTime=0;
+
         @Override
         public void run()
         {
-            int bufferSize = 1024*4;
+            int bufferSize = 1024*16;
             byte[] buffer = new byte[bufferSize];
 
             while(!Thread.currentThread().isInterrupted())
@@ -164,10 +166,12 @@ public class HTTPSeverConnector
                     BufferedInputStream bis = new BufferedInputStream(conn.getInputStream());
                     BufferedOutputStream bout = new BufferedOutputStream(getFileOutputStream(df));
 
+                    updateTime = System.currentTimeMillis();
                     int readSize = 0;
+                    long totalDownloadSize = 0;
                     while (true)
                     {
-                        if(isCancelled() == true)
+                        if(isCancelledAndUpdateDownloadSize(totalDownloadSize) == true)
                         {
                             Log.d("HTTP", "download cancel : " + df.target);
                             break;
@@ -176,7 +180,10 @@ public class HTTPSeverConnector
                         readSize = bis.read(buffer);
                         //Log.d("HTTP", "get : " + readSize);
                         if (readSize > 0)
+                        {
                             bout.write(buffer, 0, readSize);
+                            totalDownloadSize += readSize;
+                        }
                         else if (readSize < 0)
                             break;
                     }
@@ -212,12 +219,25 @@ public class HTTPSeverConnector
             return new FileOutputStream(file);
         }
 
-        private boolean isCancelled()
+        private boolean isCancelledAndUpdateDownloadSize(long downloadSize)
         {
-            boolean isnull = false;
+            boolean isnull = true;
             synchronized (downloadSet)
             {
-                isnull = downloadSet.downloading==null;
+                if(downloadSet.downloading!=null)
+                {
+                    downloadSet.downloading.downloadSize = downloadSize;
+                    isnull = false;
+
+                    long now = System.currentTimeMillis();
+                    if(downloadSet.handler!=null && now-updateTime>1000*5)  // 5s
+                    {
+                        Message msg = Message.obtain();
+                        msg.what = ServerListActivity.EVENT_UPDATE_DOWNLOAD_SIZE;
+                        downloadSet.handler.sendMessage(msg);
+                        updateTime = now;
+                    }
+                }
             }
             return isnull;
         }

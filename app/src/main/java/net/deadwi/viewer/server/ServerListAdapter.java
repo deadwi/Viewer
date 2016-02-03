@@ -133,6 +133,8 @@ public class ServerListAdapter extends BaseAdapter
                 textHead.setText("F");
 
             String info = FileManager.getFileSizeText(list.get(position).size);
+            if(list.get(position).type == FileItem.TYPE_DOWNLOAD_FILE && list.get(position).additionalInfo!=null)
+                info =  list.get(position).additionalInfo + "/" + info;
             if(list.get(position).date!=null)
                 info += " "+list.get(position).date;
             textInfo.setText(info);
@@ -247,6 +249,12 @@ public class ServerListAdapter extends BaseAdapter
     public int cancelFiles()
     {
         return serverManager.cancelDownload(list);
+    }
+
+    public void updateDownloadSize()
+    {
+        if(list!=null && list.isEmpty()==false)
+            list.get(0).additionalInfo = serverManager.getDownloadSize(list.get(0).odata);
     }
 }
 

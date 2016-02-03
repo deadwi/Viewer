@@ -11,6 +11,7 @@ public class DownloadFile
     // name with path (making path)
     public String target;
     public long size;
+    public long downloadSize;
     public boolean isDirectory;
 
     public DownloadFile(ServerInfo _serverInfo,String _fullPath, String _target, long _size, boolean _isDirectory)
@@ -19,6 +20,7 @@ public class DownloadFile
         fullPath = _fullPath;
         target = _target;
         size = _size;
+        downloadSize = 0;
         isDirectory = _isDirectory;
     }
 }
