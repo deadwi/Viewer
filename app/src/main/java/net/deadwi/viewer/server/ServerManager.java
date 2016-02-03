@@ -23,14 +23,25 @@ public class ServerManager
     private int sortType = FileManager.SORT_ALPHA_WITH_NUM;
     private ServerInfo currentServerInfo;
     private HTTPSeverConnector serverHttp;
-    private Handler handler;
     private DownloadSet downloadSet;
 
-    public ServerManager(Handler _handler)
+    private static ServerManager ourInstance = new ServerManager();
+    public static ServerManager getInstance() {
+        return ourInstance;
+    }
+
+    private ServerManager()
     {
-        handler = _handler;
         downloadSet = new DownloadSet();
-        serverHttp = new HTTPSeverConnector(handler, downloadSet);
+        serverHttp = new HTTPSeverConnector(downloadSet);
+    }
+
+    public void setHandler(Handler _handler)
+    {
+        synchronized (downloadSet)
+        {
+            downloadSet.handler = _handler;
+        }
     }
 
     public boolean requestSetDir(String path)

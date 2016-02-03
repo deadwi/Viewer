@@ -73,7 +73,8 @@ public class ServerListActivity  extends AppCompatActivity
 
         currentNameTextView = (TextView) findViewById(R.id.textCurrentName);
 
-        serverManager = new ServerManager(handler);
+        serverManager = ServerManager.getInstance();
+        serverManager.setHandler(handler);
         listAdapter = new ServerListAdapter(this, serverManager,handler);
         fileListView = (ListView) findViewById(R.id.listView);
         fileListView.setAdapter(listAdapter);
@@ -184,6 +185,13 @@ public class ServerListActivity  extends AppCompatActivity
     {
         super.onResume();
         refreshFileList(false);
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        serverManager.setHandler(null);
     }
 
     @Override

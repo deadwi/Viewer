@@ -43,7 +43,6 @@ import java.util.Timer;
  */
 public class HTTPSeverConnector
 {
-    private Handler handler;
     private String serverURL; // for list
     private String serverUser; // for list
     private String serverPassword; // for list
@@ -96,7 +95,14 @@ public class HTTPSeverConnector
                 data.putString(ServerListActivity.MSG_DATA_MESSAGE, result.errorMessage);
             }
             msg.setData(data);
-            handler.sendMessage(msg);
+            synchronized (downloadSet)
+            {
+                if(downloadSet.handler!=null)
+                {
+                    downloadSet.handler.sendMessage(msg);
+                }
+            }
+
         }
 
         @Override
@@ -187,10 +193,13 @@ public class HTTPSeverConnector
                     synchronized (downloadSet)
                     {
                         downloadSet.downloading=null;
+                        if(downloadSet.handler!=null)
+                        {
+                            Message msg = Message.obtain();
+                            msg.what = ServerListActivity.EVENT_UPDATE_DOWNLOAD_LIST;
+                            downloadSet.handler.sendMessage(msg);
+                        }
                     }
-                    Message msg = Message.obtain();
-                    msg.what = ServerListActivity.EVENT_UPDATE_DOWNLOAD_LIST;
-                    handler.sendMessage(msg);
                 }
             }
         }
@@ -422,9 +431,8 @@ public class HTTPSeverConnector
         return (long)(size*unit);
     }
 
-    public HTTPSeverConnector(Handler _handler, DownloadSet _downloadSet)
+    public HTTPSeverConnector(DownloadSet _downloadSet)
     {
-        handler = _handler;
         downloadSet = _downloadSet;
         fileThread = new DownloadFileThread();
         fileThread.start();
