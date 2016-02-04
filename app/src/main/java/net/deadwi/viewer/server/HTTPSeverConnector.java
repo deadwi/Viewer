@@ -480,7 +480,8 @@ public class HTTPSeverConnector
     {
         if(lastList==null)
             return null;
-        return lastList.files;
+        // shallow copy
+        return (ArrayList<FileItem>)lastList.files.clone();
     }
 }
 

@@ -53,37 +53,40 @@ public class PdfView extends DoubleBufferView
         return ret;
     }
 
-    protected int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex)
-    {
-        CodecPage page = decodeService.getPage( Integer.parseInt(path) );
-        int viewWidth = bitmap.getWidth();
-        int viewHeight = bitmap.getHeight();
-        int pageWidth = page.getWidth();
-        int pageHeight = page.getHeight();
-        int[] areaSet = FreeImageWrapper.getOutputImageArea(isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), pageWidth, pageHeight, viewWidth, viewHeight);
-        RectF pageRelativeBounds = new RectF(
-                (float)areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X]/(float)pageWidth,
-                (float)areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y]/(float)pageHeight,
-                (float)areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X2]/(float)pageWidth,
-                (float)areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y2]/(float)pageHeight
-        );
+    protected int drawImageFromPathToBitmap(String path, Bitmap bitmap, boolean isLastPage, int viewIndex) {
+        try {
+            CodecPage page = decodeService.getPage(Integer.parseInt(path));
+            int viewWidth = bitmap.getWidth();
+            int viewHeight = bitmap.getHeight();
+            int pageWidth = page.getWidth();
+            int pageHeight = page.getHeight();
+            int[] areaSet = FreeImageWrapper.getOutputImageArea(isLastPage, viewIndex, getOptionViewMode(), optionResizeMode(), pageWidth, pageHeight, viewWidth, viewHeight);
+            RectF pageRelativeBounds = new RectF(
+                    (float) areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X] / (float) pageWidth,
+                    (float) areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y] / (float) pageHeight,
+                    (float) areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_X2] / (float) pageWidth,
+                    (float) areaSet[FreeImageWrapper.AREA_INDEX_ORIGIN_Y2] / (float) pageHeight
+            );
 
-        Bitmap outBitmap = page.renderBitmap(
-                areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_WIDTH],
-                areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_HEIGHT],
-                pageRelativeBounds);
-        if(optionFilter().length()!=0)
-            FreeImageWrapper.applyFilter(outBitmap, optionFilter());
+            Bitmap outBitmap = page.renderBitmap(
+                    areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_WIDTH],
+                    areaSet[FreeImageWrapper.AREA_INDEX_RESIZE_HEIGHT],
+                    pageRelativeBounds);
+            if (optionFilter().length() != 0)
+                FreeImageWrapper.applyFilter(outBitmap, optionFilter());
 
-        bitmap.eraseColor(Color.WHITE);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawBitmap(outBitmap,
-                areaSet[FreeImageWrapper.AREA_INDEX_DISPLAY_X],
-                areaSet[FreeImageWrapper.AREA_INDEX_DISPLAY_Y],
-                null);
-        outBitmap.recycle();
-        return areaSet[FreeImageWrapper.AREA_INDEX_VIEW_COUNT]
-                + FreeImageWrapper.RETURN_PAGE_UNIT*areaSet[FreeImageWrapper.AREA_INDEX_DOUBLE_PAGE];
+            bitmap.eraseColor(Color.WHITE);
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawBitmap(outBitmap,
+                    areaSet[FreeImageWrapper.AREA_INDEX_DISPLAY_X],
+                    areaSet[FreeImageWrapper.AREA_INDEX_DISPLAY_Y],
+                    null);
+            outBitmap.recycle();
+            return areaSet[FreeImageWrapper.AREA_INDEX_VIEW_COUNT]
+                    + FreeImageWrapper.RETURN_PAGE_UNIT * areaSet[FreeImageWrapper.AREA_INDEX_DOUBLE_PAGE];
+        } catch (Exception ex) {
+        }
+        return -1;
     }
 }
 

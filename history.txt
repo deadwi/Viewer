@@ -26,6 +26,11 @@
 * close후 다시 들어오면 download progress 파일들이 안보이는 문제 수정
 * download progress 다운로드 크기 업데이트
 
+1.06
+* http 검색 후, 다음 검색시 이전 결과 내에서만 검색하는 문제 수정
+* pdf runtime error 처리
+
+
 지원 예정
 * 페이지 분활시 비율 조정
 * 페이지 분활시 일정 부분 더 보여주기

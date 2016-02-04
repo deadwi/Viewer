@@ -462,16 +462,4 @@ public class ServerListActivity  extends AppCompatActivity
         listAdapter.updateDownloadSize();
         listAdapter.notifyDataSetChanged();
     }
-
-    /*
-    private void updateSingleItemView(int position)
-    {
-        listAdapter.notifyDataSetChanged();
-
-        int firstVisiblePosition = fileListView.getFirstVisiblePosition();
-        View view = fileListView.getChildAt(position - firstVisiblePosition);
-        TextView textInfo = (TextView)view.findViewById(R.id.textInfo);
-        textTitle.setText("Title Change");
-    }
-    */
 }
