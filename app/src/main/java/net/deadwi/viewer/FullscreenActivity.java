@@ -207,7 +207,7 @@ public class FullscreenActivity extends AppCompatActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent)
     {
-        Log.d("MAIN","onActivityResult");
+        Log.d("MAIN", "onActivityResult");
         super.onActivityResult(requestCode, resultCode, intent);
         if(resultCode==RESULT_OK)
         {
@@ -254,10 +254,19 @@ public class FullscreenActivity extends AppCompatActivity
         popupCloseDialog();
     }
 
+    private void selectRowFromName(String name)
+    {
+        int pos = fileListAdapter.getIndexWithName(name);
+        if(pos>=0)
+            fileListView.setSelection(pos);
+    }
+
     private void goUpFolder()
     {
+        String name = fileManager.getCurrentName();
         fileManager.movePreviousDir();
         refreshFileList(true);
+        selectRowFromName(name);
     }
 
     private void goNextPage()

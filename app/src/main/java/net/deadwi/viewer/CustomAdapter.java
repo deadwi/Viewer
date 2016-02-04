@@ -202,5 +202,15 @@ public class CustomAdapter extends BaseAdapter
             bookmarkList = Bookmark.getInstance().loadBookmark(fileManager.getCurrentDir());
         }
     }
+
+    public int getIndexWithName(String name)
+    {
+        for(int i=0;i<list.size();i++)
+        {
+            if(name.compareTo(list.get(i).name)==0)
+                return i;
+        }
+        return -1;
+    }
 }
 

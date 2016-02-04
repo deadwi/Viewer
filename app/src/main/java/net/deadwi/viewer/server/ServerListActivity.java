@@ -48,6 +48,8 @@ public class ServerListActivity  extends AppCompatActivity
     private ServerManager serverManager;
     private boolean isViewServer=true;
     private String currentPath=null;
+    private String previousPath=null;
+
 
     private final MyHandler handler = new MyHandler(this);
     private static class MyHandler extends Handler
@@ -273,12 +275,21 @@ public class ServerListActivity  extends AppCompatActivity
         }
     }
 
+    private void selectRowFromPath(String name)
+    {
+        int pos = listAdapter.getIndexWithPath(name);
+        if(pos>=0)
+            fileListView.setSelection(pos);
+    }
+
     private void goUpFolder()
     {
         ((EditText) findViewById(R.id.editText)).setText("");
         if(isViewServer == true)
         {
-            if (serverManager.movePreviousDir(currentPath) == false) {
+            previousPath = currentPath;
+            if (serverManager.movePreviousDir(currentPath) == false)
+            {
                 currentPath = null;
                 refreshFileList(true);
             }
@@ -333,6 +344,11 @@ public class ServerListActivity  extends AppCompatActivity
             isViewServer = true;
             currentPath = path;
             refreshFileList(true);
+            if(previousPath!=null)
+            {
+                selectRowFromPath(previousPath);
+                previousPath=null;
+            }
         }
         else if(msg.what==EVENT_UPDATE_LIST_FAIL)
         {

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.widget.PopupMenu;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -256,5 +257,14 @@ public class ServerListAdapter extends BaseAdapter
         if(list!=null && list.isEmpty()==false)
             list.get(0).additionalInfo = serverManager.getDownloadSize(list.get(0).odata);
     }
-}
 
+    public int getIndexWithPath(String path)
+    {
+        for(int i=0;i<list.size();i++)
+        {
+            if(path.endsWith(list.get(i).getFullPath()))
+                return i;
+        }
+        return -1;
+    }
+}
