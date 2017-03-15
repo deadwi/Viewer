@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -213,7 +214,8 @@ public class HTTPSeverConnector
 
         private FileOutputStream getFileOutputStream(DownloadFile df) throws IOException
         {
-            File file = FileManager.getFileWithDirectory(FileManager.getFullPath(Option.getInstance().getDownloadPath(),df.target));
+            String fullPath = FileManager.getFullPath(Option.getInstance().getDownloadPath(),df.target);
+            File file = FileManager.getFileWithDirectory(fullPath.replaceAll("[:*?\"<>|]", "_"));
             if(file==null)
                 return null;
             return new FileOutputStream(file);
@@ -245,9 +247,14 @@ public class HTTPSeverConnector
 
     static public String getURLString(String fullPath) throws IOException, URISyntaxException
     {
-        URL url = new URL(fullPath);
-        URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
-        return uri.toASCIIString();
+        int posProtocol = fullPath.indexOf("//");
+        if(posProtocol<0)
+            return fullPath;
+        int posPath = fullPath.indexOf("/",posProtocol+2);
+        if(posPath<0)
+            return fullPath;
+        // url.getPath()는 특수문자 섞인 경우 제대로 처리 못한다.
+        return fullPath.substring(0, posPath) + URLEncoder.encode(fullPath.substring(posPath), "UTF-8").replaceAll("%2F", "/").replaceAll("\\+", "%20");
     }
 
     static public URLConnection getURLConnection(String fullPath,String user,String password) throws IOException, URISyntaxException
